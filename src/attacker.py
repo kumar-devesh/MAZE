@@ -71,8 +71,8 @@ def attack():
     S = get_model(args.model_clone, args.dataset)  # Clone  (Student)
     S = S.to(args.device)
 
-    savepathT = savedir + "T.pt"
-    T.load_state_dict(torch.load(savepathT))
+    # savepathT = savedir + "T.pt"
+    # T.load_state_dict(torch.load(savepathT))
     T = T.to(args.device)
     _, tar_acc = test(T, args.device, test_loader)
     print("* Loaded Target Model *")

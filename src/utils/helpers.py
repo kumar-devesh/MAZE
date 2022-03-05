@@ -5,7 +5,6 @@ from tqdm import tqdm
 import torch.nn.functional as F
 import torch.nn as nn
 import matplotlib.pyplot as plt
-import wandb
 import numpy as np
 eps=1e-7
 from utils.simutils import logs
@@ -14,13 +13,11 @@ from torch import autograd
 import itertools
 import torch.optim as optim
 import random
-#import kornia
 import copy
-import seaborn as sns
 import time
 tanh = nn.Tanh()
 import pandas as pd
-from cleverhans.future.torch.attacks import fast_gradient_method, projected_gradient_descent
+from cleverhans.torch.attacks import fast_gradient_method, projected_gradient_descent
 
 
 def train_epoch(model, device, train_loader, opt, args, disable_pbar=False):

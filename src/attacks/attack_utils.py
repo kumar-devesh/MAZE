@@ -224,14 +224,14 @@ def zoge_backward(args, x_pre, x, S, T):
         for _ in range(args.ndirs):
             u = torch.randn(x_pre.shape, device=args.device)
             u_flat = u.view([args.batch_size, -1])
-            u_norm = u / torch.norm(u_flat, dim=1).view([-1, 1, 1, 1])
+            u_norm = u / torch.norm(u_flat, dim=1).view([-1, 1, 1, 1, 1])
             x_mod_pre = x_pre + (args.mu * u_norm)
             x_mod = tanh(x_mod_pre)
             Sout = S(x_mod)
             Tout = T(x_mod)
             lossG_mod = gen_loss_noreduce(args, Tout, Sout)
             grad_est += ((d / args.ndirs) * (lossG_mod - lossG) / args.mu).view(
-                [-1, 1, 1, 1]
+                [-1, 1, 1, 1, 1]
             ) * u_norm
 
     grad_est /= args.batch_size

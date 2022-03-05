@@ -13,6 +13,7 @@ from . import (
     conv3_cgen,
     conv3_dis,
     conv3_mnist,
+    simple_models
 )
 from .cifar10_models import resnet18, vgg13_bn
 from datasets import get_nclasses
@@ -37,6 +38,9 @@ model_dict = {
     "res20": resnet.resnet20,
     "res18_ptm": resnet18,
     "vgg13_bn": vgg13_bn,
+    "simple_cnn3d": simple_models.SimpleCNN3D,
+    "simple_gen": simple_models.SimpleGenerator,
+    "simple_dis": simple_models.SimpleDiscriminator,
 }
 
 gen_channels_dict = {
@@ -99,6 +103,13 @@ def get_model(modelname, dataset="", pretrained=None, latent_dim=10, **kwargs):
             start_dim=gen_dim_dict[dataset],
             out_channels=gen_channels_dict[dataset],
         )
+    elif modelname == "conv3_gen_3d":
+        model = model_fn(
+            z_dim=latent_dim,
+            start_tdim=4,
+            start_dim=10,
+            out_channels=3
+        )
     elif modelname in ["conv3_cgen"]:
         model = model_fn(
             z_dim=latent_dim,
@@ -110,6 +121,14 @@ def get_model(modelname, dataset="", pretrained=None, latent_dim=10, **kwargs):
         model = model_fn(channels=gen_channels_dict[dataset], dataset=dataset)
     elif modelname in ["res18_ptm", "vgg13_bn"]:
         model = model_fn(pretrained=pretrained)
+
+    elif modelname in "simple_cnn3d":
+        model = model_fn(t_dim=8, img_x=32, img_y=32, num_classes=5)
+    elif modelname == "simple_gen":
+        model = model_fn(latent_vector_dim=10, start_xydim=16, start_tdim=4, out_channels=3)
+    elif modelname == "simple_dis":
+        model = model_fn()
+
     else:
         sys.exit("unknown model")
 

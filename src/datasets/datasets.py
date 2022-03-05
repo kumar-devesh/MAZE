@@ -14,7 +14,7 @@ import os.path as osp
 import numpy as np
 from collections import defaultdict as dd
 from PIL import Image
-from ml_datasets import get_dataloaders
+# from ml_datasets import get_dataloaders
 
 classes_dict = {
     "kmnist": 10,
@@ -27,6 +27,7 @@ classes_dict = {
     "fashionmnist": 10,
     "fashionmnist_32": 10,
     "mnist_32": 10,
+    "randomvideoslikekinetics": 400
 }
 
 
@@ -79,6 +80,22 @@ class GTSRB(Dataset):
             img = self.transform(img)
 
         return img, classId
+
+
+# a dummy dataset, as a replacement until we include kinetics
+# does not make sense to test, but just to complete the train and test
+class RandomVideosLikeKinetics(Dataset):
+    def __init__(self, train=True):
+        super().__init__()
+        self.size = 100 if train else 50
+        self.X = torch.randn((self.size, 3, 8, 32, 32))
+        self.y = torch.randint(low=0, high=4, size=(self.size,))
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, index):
+        return self.X[index], self.y[index]
 
 
 def get_dataset(dataset, batch_size=256, augment=False):
@@ -235,6 +252,11 @@ def get_dataset(dataset, batch_size=256, augment=False):
     elif dataset == "gtsrb":
         trainset = GTSRB(train=True, transform=transform_train)
         testset = GTSRB(train=False, transform=transform_test)
+
+    elif dataset == "randomvideoslikekinetics":
+        trainset = RandomVideosLikeKinetics(train=True)
+        testset = RandomVideosLikeKinetics(train=False)
+        batch_size = 16
 
     else:
         sys.exit("Unknown dataset {}".format(dataset))
