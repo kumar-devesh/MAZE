@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from Normalization import ConditionalNorm, SpectralNorm
+from models.Normalization import ConditionalNorm, SpectralNorm
 
 class GResBlock(nn.Module):
 

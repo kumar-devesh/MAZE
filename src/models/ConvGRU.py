@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     model = ConvGRU(input_size=8, hidden_sizes=[32, 64, 16], kernel_sizes=[3, 5, 3], n_layers=3).cuda()
 
-    model = nn.DataParallel(model, device_ids=[0, 1])
+    #model = nn.DataParallel(model, device_ids=[0, 1])
 
     x = torch.rand([8, 8, 64, 64], dtype=torch.float32).cuda()
     hidden_state = None
@@ -149,6 +149,5 @@ if __name__ == "__main__":
 
     # output is a list of sequential hidden representation tensors
     print(type(output))  # list
-
     # final output size
-    print(output[-1].size())  # torch.Size([1, 16, 64, 64])
+    print(len(output), output[-1].size())  # torch.Size([1, 16, 64, 64])
