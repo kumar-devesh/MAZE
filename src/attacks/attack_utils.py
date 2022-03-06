@@ -142,7 +142,9 @@ def sur_stats(logits_S, logits_T):
 def generate_images(args, G, z, labels=None, title="Generator Images"):
 
     n_classes = get_nclasses(args.dataset)
+    #check if a conditional generator
     if "cgen" in args.model_gen:
+        #latent vector, class_id inputs
         x, _ = G(z, labels)
     else:
         x, _ = G(z)
@@ -155,9 +157,11 @@ def generate_images(args, G, z, labels=None, title="Generator Images"):
     for i in range(5):
         for j in range(5):
             if args.dataset in ["mnist", "fashionmnist", "brain"]:
-                ax[i][j].imshow((x_np[(i * 5) + j, :, :, 0] + 1) / 2, cmap="gray")
+                ax[i][j].imshow((x_np[(i * 5) + j, :, :, 0] + 1) / 2, cmap="gray") #grayscale_images (tanh outputs to sigmoid equivalent)
             elif args.dataset in ["cifar10", "cifar100", "svhn", "diabetic5", "gtsrb"]:
-                ax[i][j].imshow((x_np[(i * 5) + j, :, :, :] + 1) / 2)
+                ax[i][j].imshow((x_np[(i * 5) + j, :, :, :] + 1) / 2) ##rgb_images (tanh outputs to sigmoid equivalent)
+            elif "kinetics" in args.dataset.lower():
+                ax[i][j].imshow((x_np[(i * 5) + j, :, :, :] + 1) / 2) ##rgb_images (tanh outputs to sigmoid equivalent)
             else:
                 sys.exit("unknown dataset {}".format(args.dataset))
             ax[i][j].axis("off")
@@ -188,9 +192,7 @@ def zoge_target_backward(args, x_pre, labels, T):
             x_mod_pre = x_pre + (args.mu * u_norm)
             Tout = T(tanh(x_mod_pre))
             lossG_target_mod = criterion_noreduce(Tout, labels)
-            grad_est += (
-                (d / args.ndirs) * (lossG_target_mod - lossG_target) / args.mu
-            ).view([-1, 1, 1, 1]) * u_norm
+            grad_est += ((d / args.ndirs) * (lossG_target_mod - lossG_target) / args.mu).view([-1, 1, 1, 1]) * u_norm
 
     grad_est /= args.batch_size
     grad_est_flat = grad_est.view([args.batch_size, -1])

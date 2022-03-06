@@ -77,11 +77,14 @@ if __name__ == "__main__":
 
     parser.add_argument('--wandb_project', type=str, default="trial", help='wandb project name')
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
+    parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
     parser.add_argument('--budget', type=int, default=5e8, help='query budget')
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=2, help='batch_size')
     parser.add_argument('--model_victim', type=str, default="ResNet3d", help='victim model to be used')     
     parser.add_argument('--model_clone', type=str, default="ResNet3d", help='clone attacker model')
+    parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
+
     parser.add_argument('--device', type=str, default="gpu", help='`gpu`/`cpu` device')
     parser.add_argument('--logdir', type=str, default="checkpoints", help='checkpoints directory')
     parser.add_argument('--white_box', type=bool, default=False, help='True if whitebox training (backprop through the model)')
@@ -89,6 +92,8 @@ if __name__ == "__main__":
     parser.add_argument('--alpha_gan', type=float, default=0.0, help='positive weight for PD setting')
     parser.add_argument('--lr_generator', type=float, default=1e-3, help='lr for generator model')  
     parser.add_argument('--lr_clone', type=float, default=0.1, help='lr for clone model') 
+    parser.add_argument('--ndirs', type=int, default=1, help='number of directions for gradient estimation') 
+    parser.add_argument('--mu', type=float, default=1e-3, help='epsilon value for normalized noise') 
 
     parser.add_argument('--iter_clone', type=int, default=5, help='iter_clone for clone model')
     parser.add_argument('--iter_gen', type=int, default=5, help='iter_gen for generator model')

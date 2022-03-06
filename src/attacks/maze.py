@@ -120,7 +120,11 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
 
         for g in range(args.iter_gen):
             z = torch.randn((args.batch_size, args.latent_dim), device=args.device)
-            x, x_pre = G(z)
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).cuda()
+                x, x_pre = G(z, class_label)
+            else:
+                x, x_pre = G(z)
             optG.zero_grad()
 
             if args.white_box:
@@ -152,10 +156,12 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
         for c in range(args.iter_clone):
             with torch.no_grad():
                 if c != 0:  # reuse x from generator update for c == 0
-                    z = torch.randn(
-                        (args.batch_size, args.latent_dim), device=args.device
-                    )
-                    x, _ = G(z)
+                    z = torch.randn((args.batch_size, args.latent_dim), device=args.device)
+                    if "cgen" in args.model_gen:
+                        class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).cuda()
+                        x, _ = G(z, class_label)
+                    else:
+                        x, _ = G(z)
                 x = x.detach()
                 Tout = T(x)
 
@@ -241,7 +247,7 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             log.metric_dict["tar_acc_fraction"] = tar_acc_fraction
 
             metric_dict = log.metric_dict
-            generate_images(args, G, test_noise, "G")
+            generate_images(args, G, test_noise, "G") #function to plot the generated data
             pbar.clear()
             time_100iter = int(time.time() - start)
             # for param_group in optS.param_groups:

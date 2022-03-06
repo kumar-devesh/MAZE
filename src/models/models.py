@@ -30,7 +30,7 @@ class Identity(nn.Module):
 
 
 model_dict = {
-    "Generator": Generator.Generator,
+    "Generator_cgen": Generator.Generator,
     #"Discriminator": Discriminator.TemporalDiscriminator,
     "Discriminator": Discriminator.SpatialDiscriminator,
     "conv3_gen": conv3_gen.conv3_gen,
@@ -80,7 +80,7 @@ def get_model(modelname="Generator", dataset="", pretrained=None, latent_dim=10,
     model_fn = model_dict[modelname]
     num_classes = get_nclasses(dataset)
 
-    if modelname == "Generator":
+    if modelname == "Generator_cgen":
         model = model_fn() #generator params
     
     elif modelname == "Discriminator":
