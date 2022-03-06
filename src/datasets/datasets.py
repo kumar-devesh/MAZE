@@ -27,7 +27,8 @@ classes_dict = {
     "fashionmnist": 10,
     "fashionmnist_32": 10,
     "mnist_32": 10,
-    "randomvideoslikekinetics": 400
+    "randomvideoslikekinetics400": 400,
+    "randomvideoslikekinetics600": 600
 }
 
 
@@ -85,11 +86,11 @@ class GTSRB(Dataset):
 # a dummy dataset, as a replacement until we include kinetics
 # does not make sense to test, but just to complete the train and test
 class RandomVideosLikeKinetics(Dataset):
-    def __init__(self, train=True):
+    def __init__(self, train=True, n_classes=400):
         super().__init__()
-        self.size = 100 if train else 50
-        self.X = torch.randn((self.size, 3, 8, 32, 32))
-        self.y = torch.randint(low=0, high=4, size=(self.size,))
+        self.size = 100 if train else 40
+        self.X = torch.randn((self.size, 32, 3, 224, 224))
+        self.y = torch.randint(low=0, high=400, size=(self.size,))
 
     def __len__(self):
         return self.size
@@ -98,7 +99,7 @@ class RandomVideosLikeKinetics(Dataset):
         return self.X[index], self.y[index]
 
 
-def get_dataset(dataset, batch_size=256, augment=False):
+def get_dataset(dataset, batch_size=256, augment=False, train_and_test=False):
     mean = (0.5, 0.5, 0.5)
     std = (0.5, 0.5, 0.5)
     num_workers = 4
@@ -253,11 +254,16 @@ def get_dataset(dataset, batch_size=256, augment=False):
         trainset = GTSRB(train=True, transform=transform_train)
         testset = GTSRB(train=False, transform=transform_test)
 
-    elif dataset == "randomvideoslikekinetics":
-        trainset = RandomVideosLikeKinetics(train=True)
-        testset = RandomVideosLikeKinetics(train=False)
-        batch_size = 16
+    elif dataset == "randomvideoslikekinetics400":
+        trainset = RandomVideosLikeKinetics(train=True, n_classes=400)
+        testset = RandomVideosLikeKinetics(train=False, n_classes=400)
+        batch_size = 2
 
+    elif dataset == "randomvideoslikekinetics600":
+        trainset = RandomVideosLikeKinetics(train=True, n_classes=600)
+        testset = RandomVideosLikeKinetics(train=False, n_classes=600)
+        batch_size = 2
+        
     else:
         sys.exit("Unknown dataset {}".format(dataset))
 
@@ -277,4 +283,7 @@ def get_dataset(dataset, batch_size=256, augment=False):
         pin_memory=True,
     )
 
-    return trainloader, testloader
+    if train_and_test:
+        return trainloader, testloader
+
+    return trainloader

@@ -111,13 +111,13 @@ def gen_loss_noreduce(args, teacher_logits, student_logits):
     return divergence.sum(dim=1)
 
 
-def gen_target_loss_noreduce(args, teacher_logits, labels):
-    divergence = -F.kl_div(
-        F.log_softmax(student_logits, dim=1),
-        F.softmax(teacher_logits, dim=1),
-        reduction="none",
-    )  # forward KL
-    return divergence.sum(dim=1)
+#def gen_target_loss_noreduce(args, teacher_logits, labels):
+#    divergence = -F.kl_div(
+#        F.log_softmax(student_logits, dim=1),
+#        F.softmax(teacher_logits, dim=1),
+#        reduction="none",
+#    )  # forward KL
+#    return divergence.sum(dim=1)
 
 
 def kl_div_logits(args, teacher_logits, student_logits, reduction="batchmean"):

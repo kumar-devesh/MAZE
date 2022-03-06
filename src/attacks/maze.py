@@ -26,20 +26,22 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-
 def maze(args, T, S, train_loader, test_loader, tar_acc):
 
     G = get_model(args.model_gen, args.dataset, latent_dim=args.latent_dim)
     G.to(args.device)
-    D = get_model(args.model_dis, args.dataset)
-    D.to(args.device)
-    T.eval(), S.train(), G.train(), D.train()
-    schD = schS = schG = None
 
-    budget_per_iter = args.batch_size * (
-        (args.iter_clone - 1) + (1 + args.ndirs) * args.iter_gen
-    )
-    iter = int(args.budget / budget_per_iter)
+    #Discriminator model not needed for the blackbox setting
+    #D = get_model(args.model_dis, args.dataset)
+    #D.to(args.device)
+
+    T.eval(), S.train(), G.train(), #D.train()
+
+    #schD = None
+    schS = schG = None
+
+    budget_per_iter = args.batch_size * ((args.iter_clone - 1) + (1 + args.ndirs) * args.iter_gen)
+    iter = int(args.budget / budget_per_iter) #number of iterations to exhaust the entire query budget
 
     if args.opt == "sgd":
         optS = optim.SGD(
@@ -48,20 +50,21 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
         optG = optim.SGD(
             G.parameters(), lr=args.lr_gen, momentum=0.9, weight_decay=5e-4
         )
-        optD = optim.SGD(
-            D.parameters(), lr=args.lr_dis, momentum=0.9, weight_decay=5e-4
-        )
+
+        #optD = optim.SGD(
+        #    D.parameters(), lr=args.lr_dis, momentum=0.9, weight_decay=5e-4
+        #)
 
         schS = optim.lr_scheduler.CosineAnnealingLR(optS, iter, last_epoch=-1)
         schG = optim.lr_scheduler.CosineAnnealingLR(optG, iter, last_epoch=-1)
-        schD = optim.lr_scheduler.CosineAnnealingLR(optD, iter, last_epoch=-1)
+        #schD = optim.lr_scheduler.CosineAnnealingLR(optD, iter, last_epoch=-1)
 
     else:
         optS = optim.Adam(S.parameters(), lr=args.lr_clone)
         optG = optim.Adam(G.parameters(), lr=args.lr_gen)
-        optD = optim.Adam(D.parameters(), lr=args.lr_dis)
+        #optD = optim.Adam(D.parameters(), lr=args.lr_dis)
 
-    print("\n== Training Clone Model ==")
+    print("\n== Starting Clone Model Training ==")
 
     lossG = lossG_gan = lossG_dis = lossD = cs = mag_ratio = torch.tensor(0.0)
     query_count = 0
@@ -71,43 +74,44 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
     results = {"queries": [], "accuracy": [], "accuracy_x": []}
     ds = []  # dataset for experience replay
 
-    if args.alpha_gan > 0:
-        assert args.num_seed > 0  # We need to have seed examples to train gan
-        print("\nQuerying the target model with initial Dataset")
-        data_loader_real = torch.utils.data.DataLoader(
-            train_loader.dataset, batch_size=args.num_seed, shuffle=True
-        )
-        data_loader_real = itertools.cycle(data_loader_real)
-        x_seed, y_seed = next(data_loader_real)
-        x_seed = x_seed.to(args.device)
-        Tout = T(x_seed)
-        batch = [
-            (a, b)
-            for a, b in zip(x_seed.cpu().detach().numpy(), Tout.cpu().detach().numpy())
-        ]
-        ds += batch
-        print("Done!")
+    ######################### not required for black box ##############################
+    #if args.alpha_gan > 0:
+    #    assert args.num_seed > 0  # We need to have seed examples to train gan
+    #    print("\nQuerying the target model with initial Dataset")
+    #    data_loader_real = torch.utils.data.DataLoader(
+    #        train_loader.dataset, batch_size=args.num_seed, shuffle=True
+    #    )
+    #    data_loader_real = itertools.cycle(data_loader_real)
+    #    x_seed, y_seed = next(data_loader_real)
+    #    x_seed = x_seed.to(args.device)
+    #    Tout = T(x_seed)
+    #    batch = [
+    #        (a, b)
+    #        for a, b in zip(x_seed.cpu().detach().numpy(), Tout.cpu().detach().numpy())
+    #    ]
+    #    ds += batch
+    #    print("Done!")
 
-        # Build data loader with seed examples
-        seed_ds_batch = [
-            (a, b)
-            for a, b in zip(
-                x_seed.cpu().detach().numpy(), y_seed.cpu().detach().numpy()
-            )
-        ]
-        seed_ds = []
-        for _ in range(10):
-            seed_ds += seed_ds_batch
-        data_loader_real = torch.utils.data.DataLoader(
-            seed_ds, batch_size=args.batch_size, num_workers=4, shuffle=True
-        )
-        # train_loader_seed = create_seed_loader(args, x_seed.cpu().numpy(), y_seed.cpu().numpy())
-        data_loader_real = itertools.cycle(data_loader_real)
+    #    # Build data loader with seed examples
+    #    seed_ds_batch = [
+    #        (a, b)
+    #        for a, b in zip(
+    #            x_seed.cpu().detach().numpy(), y_seed.cpu().detach().numpy()
+    #        )
+    #    ]
+    #    seed_ds = []
+    #    for _ in range(10):
+    #        seed_ds += seed_ds_batch
+    #    data_loader_real = torch.utils.data.DataLoader(
+    #        seed_ds, batch_size=args.batch_size, num_workers=4, shuffle=True
+    #    )
+    #    # train_loader_seed = create_seed_loader(args, x_seed.cpu().numpy(), y_seed.cpu().numpy())
+    #    data_loader_real = itertools.cycle(data_loader_real)
 
     for p in T.parameters():
         p.requires_grad = False
 
-    pbar = tqdm(range(1, iter + 1), ncols=80, disable=args.disable_pbar, leave=False)
+    pbar = tqdm(range(1, iter + 1), ncols=80, leave=False)
     for i in pbar:
 
         ###########################
@@ -125,18 +129,19 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 lossG_dis = -kl_div_logits(args, Tout, Sout)
                 (lossG_dis).backward(retain_graph=True)
             else:
+                #backprop not allowed in blackbox => zoge
                 lossG_dis, cs, mag_ratio = zoge_backward(args, x_pre, x, S, T)
 
-            if args.alpha_gan > 0:
-                lossG_gan = D(x)
-                lossG_gan = -lossG_gan.mean()
-                (args.alpha_gan * lossG_gan).backward(retain_graph=True)
+            #if args.alpha_gan > 0:
+            #    lossG_gan = D(x)
+            #    lossG_gan = -lossG_gan.mean()
+            #    (args.alpha_gan * lossG_gan).backward(retain_graph=True)
 
             lossG = lossG_dis + (args.alpha_gan * lossG_gan)
             optG.step()
 
         log.append_tensor(
-            ["Gen_loss", "Gen_loss_dis", "Gen_loss_gan", "cs", "mag_ratio"],
+            ["Gen_loss", "Gen_loss_dis (0 for dfme setting)", "Gen_loss_gan", "cs", "mag_ratio"],
             [lossG, lossG_dis, lossG_gan, cs, mag_ratio],
         )
 
@@ -163,29 +168,31 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             ############################
             ## (3) Update Critic ##  (ONLY for partial data setting)
             ############################
+
             # We assume iter_clone == iter_critic and share the training loop of the Clone for Critic update
             # This saves an extra evaluation of the generator
-            if args.alpha_gan > 0:
-                x_real = next(data_loader_real)[0]
-                if x_real.size(0) < args.batch_size:
-                    x_real = next(data_loader_real)[0]
-                x_real = x_real.to(args.device)
 
-                lossD_real = D(x_real)
-                lossD_real = -lossD_real.mean()
-                lossD_fake = D(x)
-                lossD_fake = lossD_fake.mean()
+            #if args.alpha_gan > 0:
+            #    x_real = next(data_loader_real)[0]
+            #    if x_real.size(0) < args.batch_size:
+            #        x_real = next(data_loader_real)[0]
+            #    x_real = x_real.to(args.device)
 
-                # train with gradient penalty
-                gp = gradient_penalty(x.data, x_real.data, D)
-                lossD = lossD_real + lossD_fake + args.lambda1 * gp
-                optD.zero_grad()
-                lossD.backward()
-                optD.step()
+            #    lossD_real = D(x_real)
+            #    lossD_real = -lossD_real.mean()
+            #    lossD_fake = D(x)
+            #    lossD_fake = lossD_fake.mean()
 
-        _, max_diff, max_pred = sur_stats(Sout, Tout)
+            #    # train with gradient penalty
+            #    gp = gradient_penalty(x.data, x_real.data, D)
+            #    lossD = lossD_real + lossD_fake + args.lambda1 * gp
+            #    optD.zero_grad()
+            #    lossD.backward()
+            #    optD.step()
+
+        _, max_diff, max_pred = sur_stats(Sout, Tout) #statistics bsed on S, T model logits
         log.append_tensor(
-            ["Sur_loss", "Dis_loss", "Max_diff", "Max_pred"],
+            ["KL_div_loss (clone training)", "Dis_loss", "Max_diff", "Max_pred"],
             [lossS, lossD, max_diff, max_pred],
         )
 
@@ -195,15 +202,14 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
 
         # if args.gen_dataset:
         # Store the last batch for experience replay
-        batch = [
-            (a, b)
-            for a, b in zip(x.cpu().detach().numpy(), Tout.cpu().detach().numpy())
-        ]
+        batch = [(a, b) for a, b in zip(x.cpu().detach().numpy(), Tout.cpu().detach().numpy())]
 
         ds += batch
         gen_train_loader = torch.utils.data.DataLoader(
             ds, batch_size=args.batch_size, shuffle=True
         )
+
+        #infinite length dataloader in a cyclic fashion
         gen_train_loader_iter = itertools.cycle(gen_train_loader)
 
         lossS_exp = torch.tensor(0.0, device=args.device)
@@ -218,20 +224,21 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             lossS.backward()
             optS.step()
             lossS_exp += lossS
+
         if args.iter_exp:
             lossS_exp /= args.iter_exp
-        log.append_tensor(["Sur_loss_exp"], [lossS_exp])
 
-        query_count += budget_per_iter
+        log.append_tensor(["Sur_loss_experience_replay"], [lossS_exp])
 
-        if (
-            query_count % args.log_iter < budget_per_iter
-            and query_count > budget_per_iter
-        ) or i == iter:
-            log.flatten()
-            _, log.metric_dict["Sur_acc"] = test(S, args.device, test_loader)
+        query_count += budget_per_iter #increase number of queries made so far
+
+        if (query_count % args.log_iter < budget_per_iter and query_count > budget_per_iter) or i == iter:
+            #either a fixed number of queries have been made or last iteration
+            log.flatten() #take a mean of the metric values appended so far
+
+            _, log.metric_dict["Sur_acc"] = test(S, args.device, test_loader) #student accuracy on test_dataset
             tar_acc_fraction = log.metric_dict["Sur_acc"] / tar_acc
-            log.metric_dict["Sur_acc(x)"] = tar_acc_fraction
+            log.metric_dict["tar_acc_fraction"] = tar_acc_fraction
 
             metric_dict = log.metric_dict
             generate_images(args, G, test_noise, "G")
@@ -240,9 +247,9 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             # for param_group in optS.param_groups:
             #    print("learning rate S ", param_group["lr"])
 
-            iter_M = query_count / 1e6
+            iter_M = query_count / 1e6 #iterations in million
             print(
-                "Queries: {:.2f}M Losses: Gen {:.2f} Sur {:.2f} Acc: Sur {:.2f} ({:.2f}x) time: {: d}".format(
+                "Queries: {:.2f}M Losses: Gen {:.2f} Sur {:.2f} Acc: Sur {:.2f} ({:.2f}x (fraction of teacher model)) time: {: d}".format(
                     iter_M,
                     metric_dict["Gen_loss"],
                     metric_dict["Sur_loss"],
@@ -262,15 +269,16 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             start = time.time()
 
         loss_test, _ = test(S, args.device, test_loader)
+        print("Student model loss on the test dataset: {}".format(loss_test))
 
         if schS:
             schS.step()
         if schG:
             schG.step()
-        if schD and args.alpha_gan > 0:
-            schD.step()
+        #if schD and args.alpha_gan > 0:
+        #    schD.step()
 
-    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_tgt)
+    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_victim)
     savedir_csv = savedir + "csv/"
     df = pd.DataFrame(data=results)
     budget_M = args.budget / 1e6
