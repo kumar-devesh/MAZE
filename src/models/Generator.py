@@ -5,7 +5,7 @@ from torch.nn import functional as F
 from GResBlock import GResBlock
 from Normalization import SpectralNorm
 from ConvGRU import ConvGRU
-from Attention import SelfAttention, SeparableAttn
+from Attention import SelfAttention, SeparableAttn #attention modules have not been used
 # from Module.CrossReplicaBN import ScaledCrossReplicaBatchNorm2d
 
 class Generator(nn.Module):
@@ -119,14 +119,15 @@ class Generator(nn.Module):
 
 if __name__ == "__main__":
     print("Generator Module")
-    batch_size = 5
+    batch_size = 1
     in_dim = 120
-    n_class = 4
-    n_frames = 4
+    n_class = 400
+    n_frames = 32
+    latent_dim = 14
 
     x = torch.randn(batch_size, in_dim).cuda()
-    class_label = torch.randint(low=0, high=3, size=(batch_size,)).cuda()
-    generator = Generator(in_dim, n_class=n_class, ch=3, n_frames=n_frames).cuda()
+    class_label = torch.randint(low=0, high=400, size=(batch_size,)).cuda()
+    generator = Generator(in_dim, latent_dim=latent_dim, n_class=n_class, ch=3, n_frames=n_frames).cuda()
     y = generator(x, class_label)
 
     print(x.size())
