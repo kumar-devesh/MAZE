@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from GResBlock import GResBlock
-from Normalization import SpectralNorm
-from ConvGRU import ConvGRU
-from Attention import SelfAttention, SeparableAttn #attention modules have not been used
+from models.GResBlock import GResBlock
+from models.Normalization import SpectralNorm
+from models.ConvGRU import ConvGRU
+from models.Attention import SelfAttention, SeparableAttn #attention modules have not been used
 # from Module.CrossReplicaBN import ScaledCrossReplicaBatchNorm2d
 
 class Generator(nn.Module):

@@ -16,7 +16,7 @@ from .attack_utils import (
 )
 
 import wandb
-from models import get_model
+from model import get_model
 import pandas as pd
 from utils.simutils import logs
 import itertools

@@ -5,8 +5,10 @@ import os.path as osp
 import torchvision.models as models
 import torch.nn.functional as F
 #from . import (conv3,lenet,wresnet,resnet,conv3_gen,conv3_cgen,conv3_dis,conv3_mnist,simple_models,Generator,Discriminator)
-from . import (Generator, Discriminator)
-from .cifar10_models import resnet18, vgg13_bn
+from models.Generator import Generator 
+from models.Discriminator import SpatialDiscriminator
+
+#from .cifar10_models import resnet18, vgg13_bn
 from datasets import get_nclasses
 
 
@@ -19,9 +21,9 @@ class Identity(nn.Module):
 
 
 model_dict = {
-    "Generator": Generator.Generator,
+    "Generator": Generator,
     #"Discriminator": Discriminator.TemporalDiscriminator,
-    "Discriminator": Discriminator.SpatialDiscriminator,
+    "Discriminator": SpatialDiscriminator,
 }
 
 gen_channels_dict = {

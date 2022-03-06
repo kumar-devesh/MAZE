@@ -19,7 +19,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 from utils.simutils.timer import timer
 from utils.config import parser
-from models import get_model
+from model import get_model
 from datasets import get_dataset
 from utils.helpers import test
 from attacks import (

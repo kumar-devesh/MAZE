@@ -10,7 +10,7 @@ import torch.optim as optim
 from utils import test
 from .attack_utils import kl_div_logits, generate_images, sur_stats
 import wandb
-from models import get_model
+from model import get_model
 import pandas as pd
 from utils.simutils import logs
 import itertools
