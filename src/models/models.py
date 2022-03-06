@@ -13,7 +13,9 @@ from . import (
     conv3_cgen,
     conv3_dis,
     conv3_mnist,
-    simple_models
+    simple_models,
+    Generator,
+    Discriminator
 )
 from .cifar10_models import resnet18, vgg13_bn
 from datasets import get_nclasses
@@ -28,6 +30,9 @@ class Identity(nn.Module):
 
 
 model_dict = {
+    "Generator": Generator.Generator,
+    #"Discriminator": Discriminator.TemporalDiscriminator,
+    "Discriminator": Discriminator.SpatialDiscriminator,
     "conv3_gen": conv3_gen.conv3_gen,
     "conv3_cgen": conv3_cgen.conv3_cgen,
     "conv3_dis": conv3_dis.conv3_dis,
@@ -71,11 +76,17 @@ in_channel_dict = {
 }
 
 
-def get_model(modelname, dataset="", pretrained=None, latent_dim=10, **kwargs):
+def get_model(modelname="Generator", dataset="", pretrained=None, latent_dim=10, **kwargs):
     model_fn = model_dict[modelname]
     num_classes = get_nclasses(dataset)
 
-    if modelname in [
+    if modelname == "Generator":
+        model = model_fn() #generator params
+    
+    elif modelname == "Discriminator":
+        model = model_fn() #discriminator params
+
+    elif modelname in [
         "conv3",
         "lenet",
         "res20",
@@ -133,3 +144,4 @@ def get_model(modelname, dataset="", pretrained=None, latent_dim=10, **kwargs):
         sys.exit("unknown model")
 
     return model
+  
