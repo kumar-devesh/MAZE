@@ -73,6 +73,7 @@ def main():
 
 
 if __name__ == "__main__":
+    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
     parser = argparse.ArgumentParser(description='MAZE')
 
     parser.add_argument('--wandb_project', type=str, default="trial", help='wandb project name')
