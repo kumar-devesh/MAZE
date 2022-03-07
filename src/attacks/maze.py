@@ -27,8 +27,8 @@ import matplotlib
 matplotlib.use("Agg")
 
 def maze(args, T, S, train_loader, test_loader, tar_acc):
-
-    G = get_model(args.model_gen, args.dataset, latent_dim=args.latent_dim)
+ 
+    G = get_model(args.model_gen, args.dataset, latent_dim=args.latent_dim) 
     G.to(args.device)
 
     #Discriminator model not needed for the blackbox setting

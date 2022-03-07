@@ -3,4 +3,4 @@ python -c 'import torch; print(torch.cuda.is_available()); print(torch.version.c
 #cd ./src/models
 #bash GD.sh
 #cd ../..
-python3 src/attacker.py
+python src/attacker.py
