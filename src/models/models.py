@@ -154,9 +154,9 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
     elif modelname in "simple_cnn3d":
         model = model_fn(t_dim=8, img_x=32, img_y=32, num_classes=5)
     elif modelname == "simple_gen":
-        model = model_fn(latent_vector_dim=10, start_xydim=16, start_tdim=4, out_channels=3)
+        model = model_fn(latent_vector_dim=args.latent_dim, start_xydim=112, start_tdim=4, out_channels=3)
     elif modelname == "simple_dis":
-        model = model_fn()
+        model = model_fn(args.batch_size, n_classes=400)
 
     else:
         sys.exit("unknown model")

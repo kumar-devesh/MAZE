@@ -70,7 +70,6 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
     query_count = 0
     log = logs.BatchLogs()
     start = time.time()
-    test_noise = torch.randn((5 * 5, args.latent_dim), device=args.device)
     results = {"queries": [], "accuracy": [], "accuracy_x": []}
     ds = []  # dataset for experience replay
 
@@ -127,7 +126,7 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 x, x_pre = G(z)
             optG.zero_grad()
 
-            print("generated images successfully of size: ", x_pre.size())
+            #print("generated video successfully of size: ", x_pre.size())
             if args.white_box:
                 Tout = T(x)
                 Sout = S(x)
@@ -248,7 +247,16 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             log.metric_dict["tar_acc_fraction"] = tar_acc_fraction
 
             metric_dict = log.metric_dict
-            generate_images(args, G, test_noise, "G") #function to plot the generated data
+
+            z = torch.randn((args.batch_size, args.in_dim), device=args.device)
+            
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                x, _ = generate_images(args, G, z, class_label, "G")
+            else:
+                x, _ = generate_images(args, G, z, "G")
+
+            #function to plot the generated data
             pbar.clear()
             time_100iter = int(time.time() - start)
             # for param_group in optS.param_groups:

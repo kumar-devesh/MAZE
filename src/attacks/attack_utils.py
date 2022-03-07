@@ -149,6 +149,10 @@ def generate_images(args, G, z, labels=None, title="Generator Images"):
     else:
         x, _ = G(z)
 
+    #################demo model############
+    x = torch.transpose(x, 1, 2)
+    x = x.view(-1, 3, 224, 224)
+    #######################################
     x_np = x.detach().cpu().numpy()
     x_np = np.moveaxis(x_np, 1, 2)
     x_np = np.moveaxis(x_np, 2, 3)
