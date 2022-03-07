@@ -10,7 +10,7 @@ from models.Attention import SelfAttention, SeparableAttn #attention modules hav
 
 class Generator(nn.Module):
 
-    def __init__(self, in_dim=120, latent_dim=4, n_class=4, ch=32, n_frames=48, hierar_flag=False):
+    def __init__(self, in_dim=120, latent_dim=7, n_class=400, ch=32, n_frames=32, hierar_flag=False):
         super().__init__()
 
         self.in_dim = in_dim
@@ -20,9 +20,9 @@ class Generator(nn.Module):
         self.hierar_flag = hierar_flag
         self.n_frames = n_frames
 
-        self.embedding = nn.Embedding(n_class, in_dim)
+        self.embedding = nn.Embedding(num_embeddings=n_class, embedding_dim=in_dim)
 
-        self.affine_transfrom = nn.Linear(in_dim * 2, latent_dim * latent_dim * 8 * ch)
+        self.affine_transfrom = nn.Linear(in_dim*2, latent_dim*latent_dim*8*ch)
 
         # self.self_attn = SelfAttention(8 * ch)
 

@@ -36,8 +36,8 @@ def attack():
     #to be removed
     train_loader, test_loader = get_dataset(args.dataset, args.batch_size, train_and_test=True)
 
-    T = get_model(args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
-    S = get_model(args.model_clone, args.n_classes, args.dataset)  # Clone  (Student)
+    T = get_model(args, args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
+    S = get_model(args, args.model_clone, args.n_classes, args.dataset)  # Clone  (Student)
     S = S.to(args.device)
     T = T.to(args.device)
 
@@ -79,18 +79,23 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
     parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
     parser.add_argument('--budget', type=int, default=5e8, help='query budget')
+
+
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=2, help='batch_size')
     parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
     parser.add_argument('--model_clone', type=str, default="ResNet3d_S", help='clone attacker model')
     parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
+    parser.add_argument('--latent_dim', type=int, default=7, help='latent dim for generator ((16x)*(16x)) generated image resolution')
 
     parser.add_argument('--device', type=str, default="gpu", help='`gpu`/`cpu` device')
+    parser.add_argument('--opt', type=str, default="adam", help='sgd for sgd, otherwize adam is used')
     parser.add_argument('--logdir', type=str, default="checkpoints", help='checkpoints directory')
     parser.add_argument('--white_box', type=bool, default=False, help='True if whitebox training (backprop through the model)')
 
     parser.add_argument('--alpha_gan', type=float, default=0.0, help='positive weight for PD setting')
-    parser.add_argument('--lr_generator', type=float, default=1e-3, help='lr for generator model')  
+    parser.add_argument('--in_dim', type=int, default=120, help='generator input dimension for embedding')
+    parser.add_argument('--lr_gen', type=float, default=1e-3, help='lr for generator model')  
     parser.add_argument('--lr_clone', type=float, default=0.1, help='lr for clone model') 
     parser.add_argument('--ndirs', type=int, default=1, help='number of directions for gradient estimation') 
     parser.add_argument('--mu', type=float, default=1e-3, help='epsilon value for normalized noise') 
@@ -108,6 +113,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
+    if args.device=="cpu":
+        args.device = torch.device(args.device) 
+    else:
+        args.device = torch.device("cuda") 
+
     wandb.init(project=args.wandb_project)
     run_name = "{}_{}".format(args.dataset, args.attack)
     if args.attack == "maze":
@@ -135,7 +145,7 @@ if __name__ == "__main__":
     
         cudnn.enabled = True
         cudnn.benchmark = True
-        args.device = "cuda"
-    else:
-        args.device = "cpu"
+        #args.device = "cuda"
+    #else:
+    #    args.device = "cpu"
     main()
