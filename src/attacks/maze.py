@@ -28,8 +28,8 @@ matplotlib.use("Agg")
 
 def maze(args, T, S, train_loader, test_loader, tar_acc):
 
-    G = get_model(args.model_gen, args.dataset, latent_dim=args.latent_dim)
-    G.to(args.device)
+    G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
+    G = G.to(args.device)
 
     #Discriminator model not needed for the blackbox setting
     #D = get_model(args.model_dis, args.dataset)
@@ -60,8 +60,8 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
         #schD = optim.lr_scheduler.CosineAnnealingLR(optD, iter, last_epoch=-1)
 
     else:
-        optS = optim.Adam(S.parameters(), lr=args.lr_clone)
-        optG = optim.Adam(G.parameters(), lr=args.lr_gen)
+        optS = optim.Adam(S.parameters(), lr=args.lr_clone, betas=(args.beta1, args.beta2))
+        optG = optim.Adam(G.parameters(), lr=args.lr_gen, betas=(args.beta1, args.beta2))
         #optD = optim.Adam(D.parameters(), lr=args.lr_dis)
 
     print("\n== Starting Clone Model Training ==")
@@ -119,9 +119,9 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
         ###########################
 
         for g in range(args.iter_gen):
-            z = torch.randn((args.batch_size, args.latent_dim), device=args.device)
+            z = torch.randn(args.batch_size, args.in_dim).to(args.device)
             if "cgen" in args.model_gen:
-                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).cuda()
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
                 x, x_pre = G(z, class_label)
             else:
                 x, x_pre = G(z)
@@ -157,9 +157,9 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
         for c in range(args.iter_clone):
             with torch.no_grad():
                 if c != 0:  # reuse x from generator update for c == 0
-                    z = torch.randn((args.batch_size, args.latent_dim), device=args.device)
+                    z = torch.randn((args.batch_size, args.in_dim), device=args.device)
                     if "cgen" in args.model_gen:
-                        class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).cuda()
+                        class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
                         x, _ = G(z, class_label)
                     else:
                         x, _ = G(z)

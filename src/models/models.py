@@ -77,22 +77,32 @@ in_channel_dict = {
     "fashionmnist": 1,
 }
 
+class ResNet3d_wrapper(nn.Module):
+    def __init__(self, pretrained = True):
+        super(ResNet3d_wrapper, self).__init__()
+        self.pretrained = pretrained
+        self.model = torchmodels.video.r3d_18(pretrained=pretrained)
+        
+    def forward(self, x):
+        # take a transpose for model input
+        x = torch.transpose(x, dim0=1, dim1=2) #input 3,T,H,W
+        return self.model(x)
 
-def get_model(modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
+def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
     model_fn = model_dict[modelname]
-    num_classes = get_nclasses(dataset)
+    num_classes = n_classes
 
     if modelname == "Generator_cgen":
-        model = model_fn(in_dim=120, latent_dim=7, n_class=n_classes, ch=32, n_frames=32, hierar_flag=False) #generator default params
+        model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=32, n_frames=32, hierar_flag=False) #generator default params
     
     elif modelname == "Discriminator":
         model = model_fn() #discriminator default params
     
     elif modelname == "ResNet3d_T":
-        model = model_fn(pretrained=True)
+        model = ResNet3d_wrapper(pretrained=True)
     
     elif modelname == "ResNet3d_S":
-        model = model_fn(pretrained=False)
+        model = ResNet3d_wrapper(pretrained=False)
 
     elif modelname in [
         "conv3",
