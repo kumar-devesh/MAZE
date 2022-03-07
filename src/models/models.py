@@ -2,7 +2,7 @@ import torch
 import sys
 import torch.nn as nn
 import os.path as osp
-import torchvision.models as models
+import torchvision.models as torchmodels
 import torch.nn.functional as F
 from . import (
     conv3,
@@ -46,6 +46,8 @@ model_dict = {
     "simple_cnn3d": simple_models.SimpleCNN3D,
     "simple_gen": simple_models.SimpleGenerator,
     "simple_dis": simple_models.SimpleDiscriminator,
+    "ResNet3d_T": torchmodels.video.r3d_18,
+    "ResNet3d_S": torchmodels.video.r3d_18,
 }
 
 gen_channels_dict = {
@@ -76,15 +78,21 @@ in_channel_dict = {
 }
 
 
-def get_model(modelname="Generator", dataset="", pretrained=None, latent_dim=10, **kwargs):
+def get_model(modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
     model_fn = model_dict[modelname]
     num_classes = get_nclasses(dataset)
 
     if modelname == "Generator_cgen":
-        model = model_fn() #generator params
+        model = model_fn(in_dim=120, latent_dim=7, n_class=n_classes, ch=32, n_frames=32, hierar_flag=False) #generator default params
     
     elif modelname == "Discriminator":
-        model = model_fn() #discriminator params
+        model = model_fn() #discriminator default params
+    
+    elif modelname == "ResNet3d_T":
+        model = model_fn(pretrained=True)
+    
+    elif modelname == "ResNet3d_S":
+        model = model_fn(pretrained=False)
 
     elif modelname in [
         "conv3",

@@ -36,8 +36,8 @@ def attack():
     #to be removed
     train_loader, test_loader = get_dataset(args.dataset, args.batch_size, train_and_test=True)
 
-    T = get_model(args.model_victim, args.dataset)  # Target (Teacher)
-    S = get_model(args.model_clone, args.dataset)  # Clone  (Student)
+    T = get_model(args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
+    S = get_model(args.model_clone, args.n_classes, args.dataset)  # Clone  (Student)
     S = S.to(args.device)
     T = T.to(args.device)
 
@@ -81,8 +81,8 @@ if __name__ == "__main__":
     parser.add_argument('--budget', type=int, default=5e8, help='query budget')
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=2, help='batch_size')
-    parser.add_argument('--model_victim', type=str, default="ResNet3d", help='victim model to be used')     
-    parser.add_argument('--model_clone', type=str, default="ResNet3d", help='clone attacker model')
+    parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
+    parser.add_argument('--model_clone', type=str, default="ResNet3d_S", help='clone attacker model')
     parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
 
     parser.add_argument('--device', type=str, default="gpu", help='`gpu`/`cpu` device')

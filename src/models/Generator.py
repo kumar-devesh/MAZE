@@ -110,12 +110,13 @@ class Generator(nn.Module):
 
         y = F.relu(y)
         y = self.colorize(y)
+        y_pre = y
         y = torch.tanh(y)
 
         BT, C, W, H = y.size()
         y = y.view(-1, self.n_frames, C, W, H) # B, T, C, W, H
-
-        return y
+        y_pre = y_pre.view(-1, self.n_frames, C, W, H)
+        return (y, y_pre)
 
 if __name__ == "__main__":
     print("Generator Module")

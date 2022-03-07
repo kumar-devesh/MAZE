@@ -127,6 +127,7 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 x, x_pre = G(z)
             optG.zero_grad()
 
+            print("generated images successfully of size: ", x_pre.size())
             if args.white_box:
                 Tout = T(x)
                 Sout = S(x)
