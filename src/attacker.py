@@ -34,7 +34,7 @@ def attack():
     savedir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_victim)
 
     #to be removed
-    train_loader, test_loader = get_dataset(args.dataset, args.batch_size, train_and_test=True)
+    train_loader, test_loader = get_dataset(args, args.dataset, args.batch_size, train_and_test=True)
 
     T = get_model(args, args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
     S = get_model(args, args.model_clone, args.n_classes, args.dataset)  # Clone  (Student)
@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=4, help='batch_size')
+    #parser.add_argument('--n_frames', type=int, default=32, help='number of video frames')
     #parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
     #parser.add_argument('--model_clone', type=str, default="ResNet3d_S", help='clone attacker model')
     #parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
@@ -122,7 +123,8 @@ if __name__ == "__main__":
     parser.add_argument('--model_victim', type=str, default="simple_dis", help='victim model to be used')     
     parser.add_argument('--model_clone', type=str, default="simple_dis", help='clone attacker model')
     parser.add_argument('--in_dim', type=int, default=40, help='generator input dimension for embedding')
-    parser.add_argument('--budget', type=int, default=30, help='query budget')
+    parser.add_argument('--budget', type=int, default=200, help='query budget')
+    parser.add_argument('--n_frames', type=int, default=4, help='number of video frames')
     ########################################################################
     args = parser.parse_args()
     

@@ -93,7 +93,7 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
     num_classes = n_classes
 
     if modelname == "Generator_cgen":
-        model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=32, n_frames=32, hierar_flag=False) #generator default params
+        model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=32, n_frames=args.n_frames, hierar_flag=False) #generator default params
     
     elif modelname == "Discriminator":
         model = model_fn() #discriminator default params

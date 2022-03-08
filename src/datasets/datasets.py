@@ -99,7 +99,7 @@ class RandomVideosLikeKinetics(Dataset):
         return self.X[index], self.y[index]
 
 
-def get_dataset(dataset, batch_size=256, augment=False, train_and_test=False):
+def get_dataset(args, dataset, batch_size=256, augment=False, train_and_test=False):
     mean = (0.5, 0.5, 0.5)
     std = (0.5, 0.5, 0.5)
     num_workers = 4
@@ -257,12 +257,12 @@ def get_dataset(dataset, batch_size=256, augment=False, train_and_test=False):
     elif dataset == "randomvideoslikekinetics400":
         trainset = RandomVideosLikeKinetics(train=True, n_classes=400)
         testset = RandomVideosLikeKinetics(train=False, n_classes=400)
-        batch_size = 2
+        batch_size = args.batch_size
 
     elif dataset == "randomvideoslikekinetics600":
         trainset = RandomVideosLikeKinetics(train=True, n_classes=600)
         testset = RandomVideosLikeKinetics(train=False, n_classes=600)
-        batch_size = 2
+        batch_size = args.batch_size
         
     else:
         sys.exit("Unknown dataset {}".format(dataset))
