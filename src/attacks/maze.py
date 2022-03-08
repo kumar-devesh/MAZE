@@ -252,9 +252,9 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             
             if "cgen" in args.model_gen:
                 class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
-                x, _ = generate_images(args, G, z, class_label, "G")
+                x = generate_images(args, G, z, class_label, "G")
             else:
-                x, _ = generate_images(args, G, z, "G")
+                x = generate_images(args, G, z, "G")
 
             #function to plot the generated data
             pbar.clear()
@@ -267,7 +267,7 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 "Queries: {:.2f}M Losses: Gen {:.2f} Sur {:.2f} Acc: Sur {:.2f} ({:.2f}x (fraction of teacher model)) time: {: d}".format(
                     iter_M,
                     metric_dict["Gen_loss"],
-                    metric_dict["Sur_loss"],
+                    metric_dict["KL_div_loss (clone training)"],
                     metric_dict["Sur_acc"],
                     tar_acc_fraction,
                     time_100iter,

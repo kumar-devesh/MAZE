@@ -102,7 +102,7 @@ class RandomVideosLikeKinetics(Dataset):
 def get_dataset(args, dataset, batch_size=256, augment=False, train_and_test=False):
     mean = (0.5, 0.5, 0.5)
     std = (0.5, 0.5, 0.5)
-    num_workers = 4
+    num_workers = torch.get_num_threads()//2
     if dataset in ["mnist", "kmnist", "fashionmnist"]:
         if augment:
             transform_train = transforms.Compose(

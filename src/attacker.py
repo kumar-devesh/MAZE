@@ -123,8 +123,8 @@ if __name__ == "__main__":
     parser.add_argument('--model_victim', type=str, default="simple_dis", help='victim model to be used')     
     parser.add_argument('--model_clone', type=str, default="simple_dis", help='clone attacker model')
     parser.add_argument('--in_dim', type=int, default=40, help='generator input dimension for embedding')
-    parser.add_argument('--budget', type=int, default=200, help='query budget')
-    parser.add_argument('--n_frames', type=int, default=4, help='number of video frames')
+    parser.add_argument('--budget', type=int, default=120, help='query budget')
+    parser.add_argument('--n_frames', type=int, default=8, help='number of video frames')
     ########################################################################
     args = parser.parse_args()
     
