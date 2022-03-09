@@ -57,6 +57,9 @@ class Generator(nn.Module):
 
         self.colorize = SpectralNorm(nn.Conv2d(2 * ch, 3, kernel_size=(3, 3), padding=1))
 
+        #self.tc1 = nn.ConvTranspose2d(in_channels = 3, out_channels = 3, kernel_size=2, stride=2)
+        self.tc1 = nn.Upsample(scale_factor=1.75, mode='bilinear')
+        self.tc2 = nn.ConvTranspose2d(in_channels = 3, out_channels = 3, kernel_size=2, stride=2)
 
     def forward(self, x, class_id):
 
@@ -110,12 +113,19 @@ class Generator(nn.Module):
 
         y = F.relu(y)
         y = self.colorize(y)
+
+        #####################upsample using transposed conv#############
+        y = self.tc1(y)
+        y = self.tc2(y)
+
         y_pre = y
         y = torch.tanh(y)
-
         BT, C, W, H = y.size()
+
         y = y.view(-1, C, self.n_frames, W, H) # B, C, T, W, H
         y_pre = y_pre.view(-1, C, self.n_frames, W, H)
+        ########################################################
+        #print("final output size for the generator", y.size())
         return (y, y_pre)
 
 if __name__ == "__main__":
@@ -123,8 +133,8 @@ if __name__ == "__main__":
     batch_size = 1
     in_dim = 120
     n_class = 400
-    n_frames = 32
-    latent_dim = 14
+    n_frames = 4
+    latent_dim = 4
 
     x = torch.randn(batch_size, in_dim).cuda()
     class_label = torch.randint(low=0, high=400, size=(batch_size,)).cuda()

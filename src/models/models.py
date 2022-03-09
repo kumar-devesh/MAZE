@@ -4,6 +4,9 @@ import torch.nn as nn
 import os.path as osp
 import torchvision.models as torchmodels
 import torch.nn.functional as F
+from movinets import MoViNet
+from movinets.config import _C
+
 from . import (
     conv3,
     lenet,
@@ -48,6 +51,8 @@ model_dict = {
     "simple_dis": simple_models.SimpleDiscriminator,
     "ResNet3d_T": torchmodels.video.r3d_18,
     "ResNet3d_S": torchmodels.video.r3d_18,
+    "movinet_T": MoViNet,
+    "movinet_S": MoViNet,
 }
 
 gen_channels_dict = {
@@ -78,15 +83,19 @@ in_channel_dict = {
 }
 
 class ResNet3d_wrapper(nn.Module):
-    def __init__(self, pretrained = True):
+    def __init__(self, pretrained = True, n_classes = 400):
         super(ResNet3d_wrapper, self).__init__()
         self.pretrained = pretrained
         self.model = torchmodels.video.r3d_18(pretrained=pretrained)
+        self.linear = nn.Linear(in_features=400, out_features=n_classes)
+        self.n_classes = n_classes
         
     def forward(self, x):
         # take a transpose for model input
         # x = torch.transpose(x, dim0=1, dim1=2) #input 3,T,H,W
-        return self.model(x)
+        if self.n_classes == 400:
+            return self.model(x)
+        return self.linear(self.model(x))
 
 def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
     model_fn = model_dict[modelname]
@@ -102,7 +111,13 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
         model = ResNet3d_wrapper(pretrained=True)
     
     elif modelname == "ResNet3d_S":
-        model = ResNet3d_wrapper(pretrained=False)
+        model = ResNet3d_wrapper(pretrained=False, n_classes=args.n_classes)
+
+    elif modelname == "movinet_T":
+        model = MoViNet(_C.MODEL.MoViNetA2, causal = True, pretrained = True)
+    
+    elif modelname == "movinet_S":
+        model = MoViNet(_C.MODEL.MoViNetA2, causal = True, pretrained = False)
 
     elif modelname in [
         "conv3",

@@ -83,16 +83,21 @@ if __name__ == "__main__":
 
     parser.add_argument('--wandb_project', type=str, default="trial", help='wandb project name')
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
-    parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
+    #parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
+    parser.add_argument('--n_classes', type=int, default=600, help='number of classes in the dataset')
     parser.add_argument('--budget', type=int, default=2000, help='query budget')
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=1, help='batch_size')
     parser.add_argument('--n_frames', type=int, default=32, help='number of video frames')
-    parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
+    #parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
+
+    parser.add_argument('--model_victim', type=str, default="movinet_T", help='victim model to be used')   
     parser.add_argument('--model_clone', type=str, default="ResNet3d_S", help='clone attacker model')
     parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
-    parser.add_argument('--latent_dim', type=int, default=14, help='latent dim for generator ((16x)*(16x)) generated image resolution')
+
+    #generate 64*64 images for now
+    parser.add_argument('--latent_dim', type=int, default=4, help='latent dim for generator ((16x)*(16x)) generated image resolution')
 
     parser.add_argument('--device', type=str, default="gpu", help='`gpu`/`cpu` device')
     parser.add_argument('--opt', type=str, default="adam", help='sgd for sgd, otherwize adam is used')
