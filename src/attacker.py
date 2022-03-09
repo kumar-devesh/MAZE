@@ -119,6 +119,11 @@ if __name__ == "__main__":
 
     parser.add_argument('--gen_channel', type=int, default=16, help='num generator channels')
 
+    parser.add_argument('--swint_cfg', type=str, default='Video-Swin-Transformer/configs/recognition/swin/swin_base_patch244_window877_kinetics400_1k.py',
+                        help='model build config if teacher is swin transformer')
+    parser.add_argument('--swint_ckpt', type=str, default='checkpoints/swin_base_patch244_window877_kinetics400_1k.pth',
+                        help='checkpoint for swin tranformer')
+
     ################################demo add################################
     # parser.add_argument('--model_gen', type=str, default="simple_gen", help='clone attacker model')
     # parser.add_argument('--latent_dim', type=int, default=40, help='toy model')
