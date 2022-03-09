@@ -30,6 +30,7 @@ from attacks import (
     jbda,
     maze,
 )
+from attacks.maze import train_generator
 
 def attack():
     savedir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_victim)
@@ -44,7 +45,7 @@ def attack():
 
     #generator model pretraining
     train_generator(args, T)
-    
+
     #check the target model accuracy on test_dataset
 
     ############################dummy####################
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
     #parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
     parser.add_argument('--n_classes', type=int, default=600, help='number of classes in the dataset')
-    parser.add_argument('--budget', type=int, default=2000, help='query budget')
+    parser.add_argument('--budget', type=int, default=50, help='query budget')
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=1, help='batch_size')

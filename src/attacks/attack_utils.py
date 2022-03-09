@@ -280,7 +280,7 @@ def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
             x_mod_pre = x_pre + (args.mu * u_norm)
             x_mod = tanh(x_mod_pre)
             Tout = T(x_mod)
-            lossG_mod = lossfn(args, Tout, class_labels)
+            lossG_mod = lossfn(Tout, class_labels)
             grad_est += ((d / args.ndirs) * (lossG_mod - lossG) / args.mu).view(
                 [-1, 1, 1, 1, 1]
             ) * u_norm

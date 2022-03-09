@@ -55,6 +55,10 @@ def train_generator(args, T):
 
     pbar = tqdm(range(1, iter + 1), ncols=80, leave=False)
     ######################train loop#################################
+    start = time.time()
+    results = {}
+    results["queries"]=[]
+    results["loss"]=[]
     for i in pbar:
 
         ###########################
@@ -75,16 +79,16 @@ def train_generator(args, T):
             #print("generated video successfully of size: ", x_pre.size())
             if args.white_box:
                 Tout = T(x)
-                lossG = lossfn(Tout, class_label)
+                lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
                 (lossG).backward(retain_graph=True)
             else:
                 #backprop not allowed in blackbox => zoge
-                lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels)
+                lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
             optG.step()
 
         log.append_tensor(
             ["Gen model l1 loss"],
-            [lossG],
+            [torch.tensor(lossG)],
         )
 
         query_count += budget_per_iter #increase number of queries made so far
@@ -128,7 +132,7 @@ def train_generator(args, T):
 
             log = logs.BatchLogs()
 
-        if schG:
+        if args.opt == "sgd":
             schG.step()
     #add code to save generator model weights
     return
