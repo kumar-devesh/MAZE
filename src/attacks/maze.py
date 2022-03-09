@@ -13,6 +13,7 @@ from .attack_utils import (
     sur_stats,
     zoge_backward,
     gradient_penalty,
+    zoge_backward_generator_training,
 )
 
 import wandb
@@ -20,11 +21,118 @@ from models import get_model
 import pandas as pd
 from utils.simutils import logs
 import itertools
+import sys
 
 tanh = nn.Tanh()
 import matplotlib
 
 matplotlib.use("Agg")
+
+#########################################################################################################################################
+def train_generator(args, T):
+    G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
+    G = G.to(args.device)
+    G.train(), #D.train()
+    
+    lossfn = nn.L1Loss() #use l1 loss between the labels and the logits
+
+    budget_per_iter = args.batch_size * ((1 + args.ndirs) * args.iter_gen)
+    iter = int(args.budget / (2*budget_per_iter)) #number of iterations to exhaust the entire query budget
+
+    if args.opt == "sgd":
+        optG = optim.SGD(
+            G.parameters(), lr=args.lr_gen, momentum=0.9, weight_decay=5e-4
+        )
+        schG = optim.lr_scheduler.CosineAnnealingLR(optG, iter, last_epoch=-1)
+
+    else:
+        optG = optim.Adam(G.parameters(), lr=args.lr_gen, betas=(args.beta1, args.beta2))
+
+    lossG = lossG_gan = lossG_dis = lossD = cs = mag_ratio = torch.tensor(0.0)
+    query_count = 0
+    log = logs.BatchLogs()
+    #start = time.time()
+
+    pbar = tqdm(range(1, iter + 1), ncols=80, leave=False)
+    ######################train loop#################################
+    for i in pbar:
+
+        ###########################
+        # (1) Update Generator
+        ###########################
+
+        for g in range(args.iter_gen):
+            z = torch.randn(args.batch_size, args.in_dim).to(args.device)
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                x, x_pre = G(z, class_label)
+            else:
+                sys.exit("the gan used is not a conditional gan")
+                x, x_pre = G(z)
+            # print('generator shape:', x.size())
+            optG.zero_grad()
+
+            #print("generated video successfully of size: ", x_pre.size())
+            if args.white_box:
+                Tout = T(x)
+                lossG = lossfn(Tout, class_label)
+                (lossG).backward(retain_graph=True)
+            else:
+                #backprop not allowed in blackbox => zoge
+                lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels)
+            optG.step()
+
+        log.append_tensor(
+            ["Gen model l1 loss"],
+            [lossG],
+        )
+
+        query_count += budget_per_iter #increase number of queries made so far
+
+        if (query_count % args.log_iter < budget_per_iter and query_count > budget_per_iter) or i == iter:
+            #either a fixed number of queries have been made or last iteration
+            log.flatten() #take a mean of the metric values appended so far
+
+            #_, log.metric_dict["Sur_acc"] = test(S, args.device, test_loader) #student accuracy on test_dataset
+            #tar_acc_fraction = log.metric_dict["Sur_acc"] / tar_acc
+            #log.metric_dict["tar_acc_fraction"] = tar_acc_fraction
+
+            metric_dict = log.metric_dict
+
+            z = torch.randn((args.batch_size, args.in_dim), device=args.device)
+            
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                x = generate_images(args, G, z, class_label, "G")
+            else:
+                x = generate_images(args, G, z, "G")
+
+            #function to plot the generated data
+            pbar.clear()
+            time_100iter = int(time.time() - start)
+            # for param_group in optS.param_groups:
+            #    print("learning rate S ", param_group["lr"])
+
+            iter_M = query_count / 1e6 #iterations in million
+            print(
+                "Queries: {:.2f}M Losses: Gen {:.2f} time: {: d}".format(
+                    iter_M,
+                    metric_dict["Gen model l1 loss"],
+                    time_100iter,
+                )
+            )
+
+            wandb.log(log.metric_dict)
+            results["queries"].append(iter_M)
+            results["loss"].append(metric_dict["Gen model l1 loss"])
+
+            log = logs.BatchLogs()
+
+        if schG:
+            schG.step()
+    #add code to save generator model weights
+    return
+##############################################################################################################################
 
 def maze(args, T, S, train_loader, test_loader, tar_acc):
 

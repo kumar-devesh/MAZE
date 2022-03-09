@@ -42,6 +42,9 @@ def attack():
     S = S.to(args.device)
     T = T.to(args.device)
 
+    #generator model pretraining
+    train_generator(args, T)
+    
     #check the target model accuracy on test_dataset
 
     ############################dummy####################

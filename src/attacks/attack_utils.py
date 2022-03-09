@@ -265,3 +265,27 @@ def zoge_backward(args, x_pre, x, S, T):
     lossG = lossG_det.detach()
     return lossG.mean(), cs.mean(), mag_ratio.mean()
 
+def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
+    grad_est = torch.zeros_like(x_pre)
+    d = np.array(x.shape[1:]).prod()
+
+    with torch.no_grad():
+        Tout = T(x)
+        lossG = lossfn(Tout, class_labels)
+        L=0
+        for _ in range(args.ndirs):
+            u = torch.randn(x_pre.shape, device=args.device)
+            u_flat = u.view([args.batch_size, -1])
+            u_norm = u / torch.norm(u_flat, dim=1).view([-1, 1, 1, 1, 1])
+            x_mod_pre = x_pre + (args.mu * u_norm)
+            x_mod = tanh(x_mod_pre)
+            Tout = T(x_mod)
+            lossG_mod = lossfn(args, Tout, class_labels)
+            grad_est += ((d / args.ndirs) * (lossG_mod - lossG) / args.mu).view(
+                [-1, 1, 1, 1, 1]
+            ) * u_norm
+            L+=lossG_mod.item()
+
+    grad_est /= args.batch_size
+    x_pre.backward(grad_est, retain_graph=True)
+    return L/args.ndirs
