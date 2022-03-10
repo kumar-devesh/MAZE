@@ -30,6 +30,7 @@ matplotlib.use("Agg")
 
 #########################################################################################################################################
 def train_generator(args, T):
+    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, "gen_weights_{}".format(args.model_victim))
     G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
     G = G.to(args.device)
     G.train(), #D.train()
@@ -134,7 +135,9 @@ def train_generator(args, T):
 
         if args.opt == "sgd":
             schG.step()
+
     #add code to save generator model weights
+    torch.save(G.state_dict(), savedir + "{}.pt".format(args.attack))
     return
 ##############################################################################################################################
 

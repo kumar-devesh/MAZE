@@ -45,7 +45,7 @@ def attack():
 
     #generator model pretraining
     train_generator(args, T)
-
+    
     #check the target model accuracy on test_dataset
 
     ############################dummy####################
@@ -56,22 +56,22 @@ def attack():
     #######################################################
 
     #perform the attack
-    if args.attack == "noise":
-        noise(args, T, S, test_loader, tar_acc)
-    elif args.attack == "knockoff":
-        knockoff(args, T, S, test_loader, tar_acc)
-    elif args.attack == "jbda":
-        jbda(args, T, S, train_loader, test_loader, tar_acc)
-    elif args.attack == "maze":
-        maze(args, T, S, train_loader, test_loader, tar_acc)
-    else:
-        sys.exit("Unknown Attack {}".format(args.attack))
+    #if args.attack == "noise":
+    #    noise(args, T, S, test_loader, tar_acc)
+    #elif args.attack == "knockoff":
+    #    knockoff(args, T, S, test_loader, tar_acc)
+    #elif args.attack == "jbda":
+    #    jbda(args, T, S, train_loader, test_loader, tar_acc)
+    #elif args.attack == "maze":
+    #    maze(args, T, S, train_loader, test_loader, tar_acc)
+    #else:
+    #    sys.exit("Unknown Attack {}".format(args.attack))
 
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
+    #if not os.path.exists(savedir):
+    #    os.makedirs(savedir)
 
-    torch.save(S.state_dict(), savedir + "{}.pt".format(args.attack))
-    print("* Saved Sur model * ")
+    #torch.save(S.state_dict(), savedir + "{}_student.pt".format(args.attack))
+    #print("* Saved Sur model * ")
 
 
 def main():
