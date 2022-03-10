@@ -90,7 +90,7 @@ class RandomVideosLikeKinetics(Dataset):
         super().__init__()
         self.size = 100 if train else 40
         self.X = torch.randn((self.size, 32, 3, 224, 224))
-        self.y = torch.randint(low=0, high=400, size=(self.size,))
+        self.y = torch.randint(low=0, high=n_classes, size=(self.size,))
 
     def __len__(self):
         return self.size
