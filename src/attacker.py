@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import wandb
 import random
 import numpy as np
+import torch.nn as nn
 
 seed = 2021
 random.seed(seed)
@@ -24,12 +25,7 @@ from utils.config import parser
 from models import get_model
 from datasets import get_dataset
 from utils.helpers import test
-from attacks import (
-    knockoff,
-    noise,
-    jbda,
-    maze,
-)
+from attacks import (knockoff, noise, jbda, maze,)
 
 def attack():
     savedir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_victim)
@@ -39,6 +35,10 @@ def attack():
 
     T = get_model(args, args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
     S = get_model(args, args.model_clone, args.n_classes, args.dataset)  # Clone  (Student)
+    if torch.cuda.device_count() > 1:
+        # print(f'using {torch.cuda.device_count()} gpus in parallel')
+        T = nn.DataParallel(T)
+        S = nn.DataParallel(S)
     S = S.to(args.device)
     T = T.to(args.device)
 
@@ -84,15 +84,16 @@ if __name__ == "__main__":
     parser.add_argument('--wandb_project', type=str, default="trial", help='wandb project name')
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
     parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
-    parser.add_argument('--budget', type=int, default=2000, help='query budget')
+    parser.add_argument('--budget', type=int, default=200000, help='query budget')
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
-    parser.add_argument('--batch_size', type=int, default=1, help='batch_size')
-    parser.add_argument('--n_frames', type=int, default=32, help='number of video frames')
-    parser.add_argument('--model_victim', type=str, default="ResNet3d_T", help='victim model to be used')     
+    parser.add_argument('--batch_size', type=int, default=4, help='batch_size')
+    parser.add_argument('--n_frames', type=int, default=8, help='number of video frames')
+    parser.add_argument('--frame_repeat', type=int, default=4, help='number of times to repeat frames (bcfhw) -> (bc(f*frame_repeat)hw)')
+    parser.add_argument('--model_victim', type=str, default="video_swin", help='victim model to be used')     
     parser.add_argument('--model_clone', type=str, default="ResNet3d_S", help='clone attacker model')
     parser.add_argument('--model_gen', type=str, default="Generator_cgen", help='clone attacker model')
-    parser.add_argument('--latent_dim', type=int, default=14, help='latent dim for generator ((16x)*(16x)) generated image resolution')
+    parser.add_argument('--latent_dim', type=int, default=24, help='latent dim for generator ((16x)*(16x)) generated image resolution')
 
     parser.add_argument('--device', type=str, default="gpu", help='`gpu`/`cpu` device')
     parser.add_argument('--opt', type=str, default="adam", help='sgd for sgd, otherwize adam is used')
@@ -101,8 +102,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--alpha_gan', type=float, default=0.0, help='positive weight for PD setting')
     parser.add_argument('--in_dim', type=int, default=120, help='generator input dimension for embedding')
-    parser.add_argument('--lr_gen', type=float, default=1e-3, help='lr for generator model')  
-    parser.add_argument('--lr_clone', type=float, default=0.1, help='lr for clone model') 
+    parser.add_argument('--lr_gen', type=float, default=0.0001, help='lr for generator model')  
+    parser.add_argument('--lr_clone', type=float, default=0.01, help='lr for clone model') 
     parser.add_argument('--ndirs', type=int, default=1, help='number of directions for gradient estimation') 
     parser.add_argument('--mu', type=float, default=1e-3, help='epsilon value for normalized noise') 
 
@@ -121,7 +122,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--swint_cfg', type=str, default='Video-Swin-Transformer/configs/recognition/swin/swin_base_patch244_window877_kinetics400_1k.py',
                         help='model build config if teacher is swin transformer')
-    parser.add_argument('--swint_ckpt', type=str, default='checkpoints/swin_base_patch244_window877_kinetics400_1k.pth',
+    parser.add_argument('--video_swin_ckp', type=str, default='checkpoints/swin_base_patch244_window877_kinetics400_1k.pth',
                         help='checkpoint for swin tranformer')
 
     ################################demo add################################
@@ -134,6 +135,7 @@ if __name__ == "__main__":
     # parser.add_argument('--n_frames', type=int, default=8, help='number of video frames')
     ########################################################################
 
+    torch.cuda.empty_cache()
     args = parser.parse_args()
     
     if args.device=="cpu":

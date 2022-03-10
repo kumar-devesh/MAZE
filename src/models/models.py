@@ -15,12 +15,13 @@ from . import (
     conv3_mnist,
     simple_models,
     Generator,
-    Discriminator
+    Discriminator,
+    VideoSwin
 )
 from .cifar10_models import resnet18, vgg13_bn
 from datasets import get_nclasses
 from mmcv.runner import load_checkpoint
-from mmaction.models import build_model
+# from mmaction.models import build_model
 
 
 class Identity(nn.Module):
@@ -50,6 +51,7 @@ model_dict = {
     "simple_dis": simple_models.SimpleDiscriminator,
     "ResNet3d_T": torchmodels.video.r3d_18,
     "ResNet3d_S": torchmodels.video.r3d_18,
+    "video_swin": VideoSwin.PretrainedVideoSwinTransformer
 }
 
 gen_channels_dict = {
@@ -91,15 +93,15 @@ class ResNet3d_wrapper(nn.Module):
         return self.model(x)
 
 
-class VideoSwinTransformer_wrapper(nn.Module):
-    def __init__(self, config, checkpoint='', pretrained=True):
-        super(VideoSwinTransformer_wrapper, self).__init__()
-        model = build_model(config.model)
-        if pretrained:
-            load_checkpoint(model, checkpoint, map_location='cuda')
+# class VideoSwinTransformer_wrapper(nn.Module):
+#     def __init__(self, config, checkpoint='', pretrained=True):
+#         super(VideoSwinTransformer_wrapper, self).__init__()
+#         model = build_model(config.model)
+#         if pretrained:
+#             load_checkpoint(model, checkpoint, map_location='cuda')
 
-    def forward(self, X):
-        return self.model.forward_dummy(X)[0]
+#     def forward(self, X):
+#         return self.model.forward_dummy(X)[0]
 
 
 def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
@@ -107,7 +109,7 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
     num_classes = n_classes
 
     if modelname == "Generator_cgen":
-        model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=args.gen_channel, n_frames=args.n_frames, hierar_flag=False) #generator default params
+        model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=args.gen_channel, n_frames=args.n_frames, hierar_flag=False, frame_repeat=args.frame_repeat) #generator default params
     
     elif modelname == "Discriminator":
         model = model_fn() #discriminator default params
@@ -118,8 +120,8 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
     elif modelname == "ResNet3d_S":
         model = ResNet3d_wrapper(pretrained=False)
 
-    elif modelname == "VideoSwinTransformer":
-        model = VideoSwinTransformer_wrapper()
+    elif modelname == "video_swin":
+        model = model_fn(args)
 
     elif modelname in [
         "conv3",

@@ -1,0 +1,25 @@
+pid: 4114
+== Starting Clone Model Training ==
+[34m[1mwandb[39m[22m: [33mWARNING[39m Calling wandb.run.save without any arguments is deprecated.Changes to attributes are automatically persisted.
+/opt/conda/lib/python3.8/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "src/attacker_edited.py", line 177, in <module>
+    main()
+  File "src/attacker_edited.py", line 76, in main
+    timer(attack) #calls the attack function with start, end (time.time())
+  File "/workspace/maze_devesh/src/utils/simutils/timer.py", line 4, in timer
+    fun(*args)
+  File "src/attacker_edited.py", line 62, in attack
+    maze_edited(args, T, S, train_loader, test_loader, tar_acc)
+  File "/workspace/maze_devesh/src/attacks/maze_edited.py", line 142, in maze_edited
+    x, x_pre = G(z, class_label)
+  File "/opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/workspace/maze_devesh/src/models/Generator.py", line 115, in forward
+    y = torch.repeat_interleave(y, self.frame_repeat, dim=2)
+TypeError: repeat_interleave() received an invalid combination of arguments - got (Tensor, str, dim=int), but expected one of:
+ * (Tensor input, Tensor repeats, int dim, *, int output_size)
+ * (Tensor input, int repeats, int dim, *, int output_size)
+ * (Tensor repeats, *, int output_size)
+      didn't match because some of the keywords were incorrect: dim

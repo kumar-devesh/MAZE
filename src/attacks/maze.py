@@ -29,6 +29,9 @@ matplotlib.use("Agg")
 def maze(args, T, S, train_loader, test_loader, tar_acc):
 
     G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
+    if torch.cuda.device_count() > 1:
+        # print(f'using {torch.cuda.device_count()} gpus in parallel')
+        G = nn.DataParallel(G)
     G = G.to(args.device)
 
     #Discriminator model not needed for the blackbox setting
@@ -137,13 +140,15 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 #backprop not allowed in blackbox => zoge
                 lossG_dis, cs, mag_ratio = zoge_backward(args, x_pre, x, S, T)
 
-            #if args.alpha_gan > 0:
+            # if args.alpha_gan > 0:
             #    lossG_gan = D(x)
             #    lossG_gan = -lossG_gan.mean()
             #    (args.alpha_gan * lossG_gan).backward(retain_graph=True)
 
             lossG = lossG_dis + (args.alpha_gan * lossG_gan)
             optG.step()
+
+        torch.cuda.empty_cache()
 
         log.append_tensor(
             ["Gen_loss", "Gen_loss_dis (0 for dfme setting)", "Gen_loss_gan", "cs", "mag_ratio"],
@@ -168,7 +173,9 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
                 Tout = T(x)
 
             Sout = S(x)
-            print(f'student: {Sout.argmax(-1).item()}, teacher: {Tout.argmax(-1).item()}')
+            
+            for s, t in zip(Sout, Tout):
+                print(f'student: {s.argmax(-1).item()}, teacher: {t.argmax(-1).item()}')
 
             lossS = kl_div_logits(args, Tout, Sout)
             optS.zero_grad()
@@ -199,6 +206,8 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             #    optD.zero_grad()
             #    lossD.backward()
             #    optD.step()
+
+        torch.cuda.empty_cache()
 
         _, max_diff, max_pred = sur_stats(Sout, Tout) #statistics bsed on S, T model logits
         log.append_tensor(
@@ -234,6 +243,8 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             lossS.backward()
             optS.step()
             lossS_exp += lossS
+
+        torch.cuda.empty_cache()
 
         if args.iter_exp:
             lossS_exp /= args.iter_exp
@@ -287,8 +298,8 @@ def maze(args, T, S, train_loader, test_loader, tar_acc):
             S.train()
             start = time.time()
 
-        loss_test, _ = test(S, args.device, test_loader)
-        print("Student model loss on the test dataset: {}".format(loss_test))
+        # loss_test, _ = test(S, args.device, test_loader)
+        # print("Student model loss on the test dataset: {}".format(loss_test))
 
         if schS:
             schS.step()

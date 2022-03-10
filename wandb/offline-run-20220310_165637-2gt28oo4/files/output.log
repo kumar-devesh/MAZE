@@ -1,0 +1,34 @@
+
+pid: 28222
+[34m[1mwandb[39m[22m: [33mWARNING[39m Calling wandb.run.save without any arguments is deprecated.Changes to attributes are automatically persisted.
+/opt/conda/lib/python3.8/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 308, in _check_seekable
+    f.seek(f.tell())
+AttributeError: 'Namespace' object has no attribute 'seek'
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "src/attacker.py", line 176, in <module>
+    main()
+  File "src/attacker.py", line 76, in main
+    timer(attack) #calls the attack function with start, end (time.time())
+  File "/workspace/maze_devesh/src/utils/simutils/timer.py", line 4, in timer
+    fun(*args)
+  File "src/attacker.py", line 36, in attack
+    T = get_model(args, args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
+  File "/workspace/maze_devesh/src/models/models.py", line 124, in get_model
+    model = model_fn(args)
+  File "/workspace/maze_devesh/src/models/VideoSwin.py", line 786, in __init__
+    checkpoint = torch.load(video_swin_ckp)
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 594, in load
+    with _open_file_like(f, 'rb') as opened_file:
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 235, in _open_file_like
+    return _open_buffer_reader(name_or_buffer)
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 220, in __init__
+    _check_seekable(buffer)
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 311, in _check_seekable
+    raise_err_msg(["seek", "tell"], e)
+  File "/opt/conda/lib/python3.8/site-packages/torch/serialization.py", line 304, in raise_err_msg
+    raise type(e)(msg)
+AttributeError: 'Namespace' object has no attribute 'seek'. You can only torch.load from a file that is seekable. Please pre-load the data into a buffer like io.BytesIO and try to load from it instead.

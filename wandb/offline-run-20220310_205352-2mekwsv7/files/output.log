@@ -1,0 +1,19 @@
+
+pid: 3168
+[34m[1mwandb[39m[22m: [33mWARNING[39m Calling wandb.run.save without any arguments is deprecated.Changes to attributes are automatically persisted.
+/opt/conda/lib/python3.8/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "src/attacker_edited.py", line 175, in <module>
+    main()
+  File "src/attacker_edited.py", line 76, in main
+    timer(attack) #calls the attack function with start, end (time.time())
+  File "/workspace/maze_devesh/src/utils/simutils/timer.py", line 4, in timer
+    fun(*args)
+  File "src/attacker_edited.py", line 62, in attack
+    maze_edited(args, T, S, train_loader, test_loader, tar_acc)
+  File "/workspace/maze_devesh/src/attacks/maze_edited.py", line 46, in maze_edited
+    G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
+  File "/workspace/maze_devesh/src/models/models.py", line 112, in get_model
+    model = model_fn(in_dim=120, latent_dim=args.latent_dim, n_class=n_classes, ch=args.gen_channel, n_frames=args.n_frames, hierar_flag=False, frame_repeat=args.frame_repeat) #generator default params
+AttributeError: 'Namespace' object has no attribute 'frame_repeat'
