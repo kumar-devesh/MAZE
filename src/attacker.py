@@ -43,17 +43,17 @@ def attack():
     S = S.to(args.device)
     T = T.to(args.device)
 
-    #generator model pretraining
-    train_generator(args, T)
-    train_student(args, T, S, test_loader, tar_acc)
     #check the target model accuracy on test_dataset
 
     ############################dummy####################
-    #_, tar_acc = test(T, args.device, test_loader)
-    #print("* Loaded Target Model *")
-    #print("Target Model Accuracy: {:.2f}\n".format(tar_acc))
+    _, tar_acc = test(T, args.device, test_loader)
+    print("* Loaded Target Model *")
+    print("Target Model Accuracy: {:.2f}\n".format(tar_acc))
     tar_acc=100
     #######################################################
+    #generator model pretraining
+    train_generator(args, T)
+    train_student(args, T, S, test_loader, tar_acc)
 
     #perform the attack
     #if args.attack == "noise":
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
     #parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
     parser.add_argument('--n_classes', type=int, default=600, help='number of classes in the dataset')
-    #parser.add_argument('--budget', type=int, default=50, help='query budget')
+    parser.add_argument('--budget', type=int, default=50, help='query budget')
     parser.add_argument('--budget_gen', type=int, default=50, help='generator pretrain budget')
-    parser.add_argument('--budget_clone', type=int, default=50, help='clone training on pretrained generator budget')
+    parser.add_argument('--budget_clone', type=int, default=3, help='clone training on pretrained generator budget')
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=1, help='batch_size')

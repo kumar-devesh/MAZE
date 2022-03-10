@@ -181,13 +181,12 @@ def train_student(args, T, S, test_loader, tar_acc):
         # (2) Update Clone network
         ###########################
         with torch.no_grad():
-            if c != 0:  # reuse x from generator update for c == 0
-                z = torch.randn((args.batch_size, args.in_dim), device=args.device)
-                if "cgen" in args.model_gen:
-                    class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
-                    x, _ = G(z, class_label)
-                else:
-                    x, _ = G(z)
+            z = torch.randn((args.batch_size, args.in_dim), device=args.device)
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                x, _ = G(z, class_label)
+            else:
+                x, _ = G(z)
             x = x.detach()
             Tout = T(x)
 
