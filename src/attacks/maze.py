@@ -38,7 +38,7 @@ def train_generator(args, T):
     lossfn = nn.L1Loss() #use l1 loss between the labels and the logits
 
     budget_per_iter = args.batch_size * ((1 + args.ndirs) * args.iter_gen)
-    iter = int(args.budget / (2*budget_per_iter)) #number of iterations to exhaust the entire query budget
+    iter = int(args.budget_gen / (2*budget_per_iter)) #number of iterations to exhaust the entire query budget
 
     if args.opt == "sgd":
         optG = optim.SGD(
@@ -137,9 +137,130 @@ def train_generator(args, T):
             schG.step()
 
     #add code to save generator model weights
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
     torch.save(G.state_dict(), savedir + "{}.pt".format(args.attack))
     return
+
 ##############################################################################################################################
+def train_student(args, T, S, test_loader, tar_acc):
+    loaddir = "{}/{}/{}/".format(args.logdir, args.dataset, "gen_weights_{}".format(args.model_victim))
+    G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
+
+    G.load_state_dict(torch.load(loaddir + "{}.pt".format(args.attack)))
+    G = G.to(args.device)
+    G.eval(), S.train(), T.eval()
+
+    #schD = None
+    schS = schG = None
+
+    budget_per_iter = args.batch_size
+    iter = int(args.budget_clone / budget_per_iter) #number of iterations to exhaust the entire query budget
+
+    if args.opt == "sgd":
+        optS = optim.SGD(
+            S.parameters(), lr=args.lr_clone, momentum=0.9, weight_decay=5e-4
+        )
+        schS = optim.lr_scheduler.CosineAnnealingLR(optS, iter, last_epoch=-1)
+
+    else:
+        optS = optim.Adam(S.parameters(), lr=args.lr_clone, betas=(args.beta1, args.beta2))
+
+    print("\n== Starting Clone Model Training ==")
+
+    lossG = lossG_gan = lossG_dis = lossD = cs = mag_ratio = torch.tensor(0.0)
+    query_count = 0
+    
+    log = logs.BatchLogs()
+    start = time.time()
+    results = {"queries": [], "accuracy": [], "accuracy_x": []}
+
+    pbar = tqdm(range(1, iter + 1), ncols=80, leave=False)
+    for i in pbar:
+        ############################
+        # (2) Update Clone network
+        ###########################
+        with torch.no_grad():
+            if c != 0:  # reuse x from generator update for c == 0
+                z = torch.randn((args.batch_size, args.in_dim), device=args.device)
+                if "cgen" in args.model_gen:
+                    class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                    x, _ = G(z, class_label)
+                else:
+                    x, _ = G(z)
+            x = x.detach()
+            Tout = T(x)
+
+        Sout = S(x)
+        print(f'student: {Sout.argmax(-1).item()}, teacher: {Tout.argmax(-1).item()}')
+        lossS = kl_div_logits(args, Tout, Sout)
+        optS.zero_grad()
+        lossS.backward()
+        optS.step()
+
+        _, max_diff, max_pred = sur_stats(Sout, Tout) #statistics bsed on S, T model logits
+        log.append_tensor(
+            ["KL_div_loss (clone training)", "Max_diff", "Max_pred"],
+            [lossS, max_diff, max_pred],
+        )
+
+        query_count += budget_per_iter #increase number of queries made so far
+
+        if (query_count % args.log_iter < budget_per_iter and query_count > budget_per_iter) or i == iter:
+            #either a fixed number of queries have been made or last iteration
+            log.flatten() #take a mean of the metric values appended so far
+
+            _, log.metric_dict["Sur_acc"] = test(S, args.device, test_loader) #student accuracy on test_dataset
+            tar_acc_fraction = log.metric_dict["Sur_acc"] / tar_acc
+            log.metric_dict["tar_acc_fraction"] = tar_acc_fraction
+
+            metric_dict = log.metric_dict
+
+            z = torch.randn((args.batch_size, args.in_dim), device=args.device)
+            
+            if "cgen" in args.model_gen:
+                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+                x = generate_images(args, G, z, class_label, "G")
+            else:
+                x = generate_images(args, G, z, "G")
+
+            #function to plot the generated data
+            pbar.clear()
+            time_100iter = int(time.time() - start)
+            # for param_group in optS.param_groups:
+            #    print("learning rate S ", param_group["lr"])
+
+            iter_M = query_count / 1e6 #iterations in million
+            print(
+                "Queries: {:.2f}M Losses: Sur {:.2f} Acc: Sur {:.2f} ({:.2f}x (fraction of teacher model)) time: {: d}".format(
+                    iter_M,
+                    metric_dict["KL_div_loss (clone training)"],
+                    metric_dict["Sur_acc"],
+                    tar_acc_fraction,
+                    time_100iter,
+                )
+            )
+
+            wandb.log(log.metric_dict)
+            results["queries"].append(iter_M)
+            results["accuracy"].append(metric_dict["Sur_acc"])
+            results["accuracy_x"].append(tar_acc_fraction)
+
+            log = logs.BatchLogs()
+            S.train()
+            start = time.time()
+
+        loss_test, _ = test(S, args.device, test_loader)
+        print("Student model loss on the test dataset: {}".format(loss_test))
+
+        if schS:
+            schS.step()
+    
+    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, "student_weights_{}".format(args.model_victim))
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+    torch.save(S.state_dict(), savedir + "{}.pt".format(args.attack))
+    return
 
 def maze(args, T, S, train_loader, test_loader, tar_acc):
 
