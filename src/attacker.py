@@ -89,9 +89,10 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default="randomvideoslikekinetics400", help='eval dataset')
     #parser.add_argument('--n_classes', type=int, default=400, help='number of classes in the dataset')
     parser.add_argument('--n_classes', type=int, default=600, help='number of classes in the dataset')
-    parser.add_argument('--budget', type=int, default=50, help='query budget')
-    parser.add_argument('--budget_gen', type=int, default=0, help='generator pretrain budget')
-    parser.add_argument('--budget_clone', type=int, default=50000, help='clone training on pretrained generator budget')
+    parser.add_argument('--budget', type=int, default=50, help='query budget') #applicable to maze model only
+
+    parser.add_argument('--budget_gen', type=int, default=20, help='generator pretrain budget')
+    parser.add_argument('--budget_clone', type=int, default=20, help='clone training on pretrained generator budget')
 
     parser.add_argument('--attack', type=str, default="maze", help='attack type')
     parser.add_argument('--batch_size', type=int, default=1, help='batch_size')
@@ -114,13 +115,13 @@ if __name__ == "__main__":
     parser.add_argument('--in_dim', type=int, default=120, help='generator input dimension for embedding')
     parser.add_argument('--lr_gen', type=float, default=1e-3, help='lr for generator model')  
     parser.add_argument('--lr_clone', type=float, default=0.1, help='lr for clone model') 
-    parser.add_argument('--ndirs', type=int, default=1, help='number of directions for gradient estimation') 
+    parser.add_argument('--ndirs', type=int, default=3, help='number of directions for gradient estimation') 
     parser.add_argument('--mu', type=float, default=1e-3, help='epsilon value for normalized noise') 
 
     parser.add_argument('--iter_clone', type=int, default=5, help='iter_clone for clone model')
     parser.add_argument('--iter_gen', type=int, default=5, help='iter_gen for generator model')
     parser.add_argument('--iter_exp' ,type=int, default=10, help='iter_exp gives the number of experience replay iterations')
-    parser.add_argument('--log_iter', type=int, default=1e4, help='log iterations')
+    parser.add_argument('--log_iter', type=int, default=5e1, help='log iterations')
 
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1') #for adam optimizer
     parser.add_argument('--beta2', type=float, default=0.9, help='beta2')
@@ -129,6 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--PATH', type=str, default=" ", help='checkpoint path "./checkpoints/model.pth"')
 
     parser.add_argument('--gen_channel', type=int, default=16, help='num generator channels')
+    parser.add_argument('--lossfn', type=str, default="crossentropy", help='loss function to be used in generator pretraining')
 
     ################################demo add################################
     # parser.add_argument('--model_gen', type=str, default="simple_gen", help='clone attacker model')
