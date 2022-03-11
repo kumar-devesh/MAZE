@@ -35,10 +35,16 @@ def train_generator(args, T):
     G = G.to(args.device)
     G.train(), #D.train()
     
-    lossfn = nn.L1Loss() #use l1 loss between the labels and the logits
+    if args.lossfn =="l1loss":
+        lossfn = nn.L1Loss(reduction='mean')
+    elif lossfn == "kldiv":
+        lossfn = nn.KLDivLoss(reduction='mean')
+    else:
+        lossfn = nn.CrossEntropyLoss(reduction='mean')
+    #lossfn = nn.L1Loss() #use l1 loss between the labels and the logits
 
-    budget_per_iter = args.batch_size * ((1 + args.ndirs) * args.iter_gen)
-    iter = int(args.budget_gen / (2*budget_per_iter)) #number of iterations to exhaust the entire query budget
+    budget_per_iter = args.batch_size * ((1 + args.ndirs))
+    iter = int(args.budget_gen / (budget_per_iter)) #number of iterations to exhaust the entire query budget
 
     if args.opt == "sgd":
         optG = optim.SGD(
@@ -60,35 +66,41 @@ def train_generator(args, T):
     results = {}
     results["queries"]=[]
     results["loss"]=[]
+
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+
     for i in pbar:
+        #add code to save generator model weights
+        if i%1000==0:
+            torch.save(G.state_dict(), savedir + "{}_iterations:{}.pt".format(args.attack, i))
 
         ###########################
         # (1) Update Generator
         ###########################
 
-        for g in range(args.iter_gen):
-            z = torch.randn(args.batch_size, args.in_dim).to(args.device)
-            if "cgen" in args.model_gen:
-                class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
-                x, x_pre = G(z, class_label)
-            else:
-                sys.exit("the gan used is not a conditional gan")
-                x, x_pre = G(z)
-            # print('generator shape:', x.size())
-            optG.zero_grad()
+        z = torch.randn(args.batch_size, args.in_dim).to(args.device)
+        if "cgen" in args.model_gen:
+            class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
+            x, x_pre = G(z, class_label)
+        else:
+            sys.exit("the gan used is not a conditional gan")
+            x, x_pre = G(z)
+        # print('generator shape:', x.size())
+        optG.zero_grad()
 
-            #print("generated video successfully of size: ", x_pre.size())
-            if args.white_box:
-                Tout = T(x)
-                lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
-                (lossG).backward(retain_graph=True)
-            else:
-                #backprop not allowed in blackbox => zoge
-                lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
-            optG.step()
+        #print("generated video successfully of size: ", x_pre.size())
+        if args.white_box:
+            Tout = T(x)
+            lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
+            (lossG).backward(retain_graph=True)
+        else:
+            #backprop not allowed in blackbox => zoge
+            lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
+        optG.step()
 
         log.append_tensor(
-            ["Gen model l1 loss"],
+            ["Gen model {} loss".format(args.lossfn)],
             [torch.tensor(lossG)],
         )
 
@@ -135,11 +147,7 @@ def train_generator(args, T):
 
         if args.opt == "sgd":
             schG.step()
-
-    #add code to save generator model weights
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
-    torch.save(G.state_dict(), savedir + "{}.pt".format(args.attack))
+        torch.save(G.state_dict(), savedir + "{}_final.pt".format(args.attack))
     return
 
 ##############################################################################################################################
@@ -175,11 +183,18 @@ def train_student(args, T, S, test_loader, tar_acc):
     start = time.time()
     results = {"queries": [], "accuracy": [], "accuracy_x": []}
 
+    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, "student_weights_{}".format(args.model_victim))
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
+
     pbar = tqdm(range(1, iter + 1), ncols=80, leave=False)
     for i in pbar:
         ############################
         # (2) Update Clone network
         ###########################
+        if i%1000==0:
+            torch.save(S.state_dict(), savedir + "{}_{}.pt".format(args.attack, i))
+
         with torch.no_grad():
             z = torch.randn((args.batch_size, args.in_dim), device=args.device)
             if "cgen" in args.model_gen:
@@ -255,10 +270,7 @@ def train_student(args, T, S, test_loader, tar_acc):
         if schS:
             schS.step()
     
-    savedir = "{}/{}/{}/".format(args.logdir, args.dataset, "student_weights_{}".format(args.model_victim))
-    if not os.path.exists(savedir):
-        os.makedirs(savedir)
-    torch.save(S.state_dict(), savedir + "{}.pt".format(args.attack))
+    torch.save(S.state_dict(), savedir + "{}_final.pt".format(args.attack))
     return
 
 def maze(args, T, S, train_loader, test_loader, tar_acc):
