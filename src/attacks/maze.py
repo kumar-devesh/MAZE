@@ -37,7 +37,7 @@ def train_generator(args, T):
     
     if args.lossfn =="l1loss":
         lossfn = nn.L1Loss(reduction='mean')
-    elif lossfn == "kldiv":
+    elif args.lossfn == "kldiv":
         lossfn = nn.KLDivLoss(reduction='mean')
     else:
         lossfn = nn.CrossEntropyLoss(reduction='mean')
@@ -92,11 +92,18 @@ def train_generator(args, T):
         #print("generated video successfully of size: ", x_pre.size())
         if args.white_box:
             Tout = T(x)
-            lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
+            if args.lossfn == "crossentropy":
+              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes).float())
+            else:
+              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
             (lossG).backward(retain_graph=True)
         else:
             #backprop not allowed in blackbox => zoge
-            lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
+            Tout = T(x)
+            if args.lossfn == "crossentropy":
+              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes).float())
+            else:
+              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
         optG.step()
 
         log.append_tensor(
@@ -134,14 +141,14 @@ def train_generator(args, T):
             print(
                 "Queries: {:.2f}M Losses: Gen {:.2f} time: {: d}".format(
                     iter_M,
-                    metric_dict["Gen model l1 loss"],
+                    metric_dict["Gen model {} loss".format(args.lossfn)],
                     time_100iter,
                 )
             )
 
             wandb.log(log.metric_dict)
             results["queries"].append(iter_M)
-            results["loss"].append(metric_dict["Gen model l1 loss"])
+            results["loss"].append(metric_dict["Gen model {} loss".format(args.lossfn)])
 
             log = logs.BatchLogs()
 
@@ -155,7 +162,8 @@ def train_student(args, T, S, test_loader, tar_acc):
     loaddir = "{}/{}/{}/".format(args.logdir, args.dataset, "gen_weights_{}".format(args.model_victim))
     G = get_model(args, modelname = args.model_gen, n_classes=args.n_classes, dataset = args.dataset, latent_dim=args.latent_dim)
 
-    G.load_state_dict(torch.load(loaddir + "{}.pt".format(args.attack)))
+    #load weights maze_final.pt
+    G.load_state_dict(torch.load(loaddir + "{}_final.pt".format(args.attack)))
     G = G.to(args.device)
     G.eval(), S.train(), T.eval()
 
@@ -263,12 +271,11 @@ def train_student(args, T, S, test_loader, tar_acc):
             log = logs.BatchLogs()
             S.train()
             start = time.time()
-
-        loss_test, _ = test(S, args.device, test_loader)
-        print("Student model loss on the test dataset: {}".format(loss_test))
-
         if schS:
             schS.step()
+
+    loss_test, _ = test(S, args.device, test_loader)
+    print("Student model loss on the test dataset: {}".format(loss_test))
     
     torch.save(S.state_dict(), savedir + "{}_final.pt".format(args.attack))
     return

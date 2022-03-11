@@ -3,4 +3,4 @@ python -c 'import torch; print(torch.cuda.is_available()); print(torch.version.c
 #cd ./src/models
 #bash GD.sh
 #cd ../..
-python3 src/attacker.py
+python3 src/attacker.py --batch_size=4 --budget_gen=50000 --budget_clone=50000
