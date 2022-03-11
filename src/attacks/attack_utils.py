@@ -151,7 +151,7 @@ def generate_images(args, G, z, labels=None, title="Generator Images"):
 
     #################demo model############
     x = torch.transpose(x, 1, 2)
-    # print(x.size())
+    #print(x.size())
     x = torch.reshape(x, (args.batch_size*args.n_frames, 3, 224, 224))
     #x = x.view(args.batch_size*args.n_frames, 3, 224, 224)
     #######################################
@@ -271,7 +271,7 @@ def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
 
     with torch.no_grad():
         Tout = T(x)
-        lossG = lossfn(Tout, class_labels)
+        lossG = lossfn(Tout, class_labels) - args.std_wt*torch.std(input=Tout, dim=-1, keepdim=False)
         L=0
         for _ in range(args.ndirs):
             u = torch.randn(x_pre.shape, device=args.device)
@@ -280,11 +280,11 @@ def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
             x_mod_pre = x_pre + (args.mu * u_norm)
             x_mod = tanh(x_mod_pre)
             Tout = T(x_mod)
-            lossG_mod = lossfn(Tout, class_labels)
+            lossG_mod = lossfn(Tout, class_labels) - args.std_wt*torch.std(input=Tout, dim=-1, keepdim=False)
             grad_est += ((d / args.ndirs) * (lossG_mod - lossG) / args.mu).view(
                 [-1, 1, 1, 1, 1]
             ) * u_norm
-            L+=lossG_mod.item()
+            L+=lossG_mod.mean().item()
 
     grad_est /= args.batch_size
     x_pre.backward(grad_est, retain_graph=True)

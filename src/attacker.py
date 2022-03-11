@@ -20,7 +20,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 
 from utils.simutils.timer import timer
-from utils.config import parser
+#from utils.config import parser
 from models import get_model
 from datasets import get_dataset
 from utils.helpers import test
@@ -80,9 +80,7 @@ def main():
     timer(attack) #calls the attack function with start, end (time.time())
     exit(0)
 
-
-if __name__ == "__main__":
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+def parse_arguments():
     parser = argparse.ArgumentParser(description='MAZE')
 
     parser.add_argument('--wandb_project', type=str, default="trial", help='wandb project name')
@@ -131,6 +129,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--gen_channel', type=int, default=16, help='num generator channels')
     parser.add_argument('--lossfn', type=str, default="crossentropy", help='loss function to be used in generator pretraining')
+    parser.add_argument('--std_wt', type=float, default=10.0, help='std loss for teacher outputs')
 
     ################################demo add################################
     # parser.add_argument('--model_gen', type=str, default="simple_gen", help='clone attacker model')
@@ -141,7 +140,11 @@ if __name__ == "__main__":
     # parser.add_argument('--budget', type=int, default=120, help='query budget')
     # parser.add_argument('--n_frames', type=int, default=8, help='number of video frames')
     ########################################################################
+    return parser
 
+if __name__ == "__main__":
+    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+    parser = parse_arguments()
     args = parser.parse_args()
     
     if args.device=="cpu":

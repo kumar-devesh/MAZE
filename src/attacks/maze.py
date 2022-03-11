@@ -101,9 +101,10 @@ def train_generator(args, T):
             #backprop not allowed in blackbox => zoge
             Tout = T(x)
             if args.lossfn == "crossentropy":
-              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes).float())
+              lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes).float())
             else:
-              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
+              lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
+            
         optG.step()
 
         log.append_tensor(
@@ -214,7 +215,7 @@ def train_student(args, T, S, test_loader, tar_acc):
             Tout = T(x)
 
         Sout = S(x)
-        print(f'student: {Sout.argmax(-1).item()}, teacher: {Tout.argmax(-1).item()}')
+        print(f'student: {Sout.argmax(-1)}, teacher: {Tout.argmax(-1)}')
         lossS = kl_div_logits(args, Tout, Sout)
         optS.zero_grad()
         lossS.backward()

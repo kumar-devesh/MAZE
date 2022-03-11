@@ -18,10 +18,10 @@ class Generator(nn.Module):
         self.n_class = n_class
         self.ch = ch
         self.hierar_flag = hierar_flag
-	if n_frames==32:
-		self.n_frames = n_frames//4
-	else:
-        	self.n_frames = n_frames
+        if n_frames==32:
+            self.n_frames = n_frames//4
+        else:
+            self.n_frames = n_frames
 
         self.embedding = nn.Embedding(num_embeddings=n_class, embedding_dim=in_dim)
 
@@ -127,10 +127,11 @@ class Generator(nn.Module):
 
         y = y.view(-1, C, self.n_frames, W, H) # B, C, T, W, H
         y_pre = y_pre.view(-1, C, self.n_frames, W, H)
+        #print("size before concat", y.size())
         ########################################################
+        if self.n_frames==8:
+          y, y_pre = torch.concat([y,y,y,y], dim = 2), torch.concat([y_pre, y_pre, y_pre, y_pre], dim = 2)
         #print("final output size for the generator", y.size())
-	if self.n_frames==8:
-		y, y_pre == torch.stack([y,y,y,y]), torch.stack([y_pre, y_pre, y_pre, y_pre])
         return (y, y_pre)
 
 if __name__ == "__main__":
