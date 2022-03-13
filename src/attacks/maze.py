@@ -28,6 +28,27 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+class CrossEntropyLoss():
+    def __init__(self, t = 10):
+        self.t = t
+
+    def softmax(self, input, t=100):
+        t = self.t
+        ##print("input", input)
+        #ex = torch.exp(input/t)
+        ##print("exp", ex)
+        #sum = torch.sum(input=ex, dim=-1, keepdim=True)
+        #print("ex_size", ex.size())
+        #print("sum: ", sum, sum.size())
+        x = torch.exp(input/t) / torch.sum(input=torch.exp(input/t), dim=-1, keepdim=True)
+        print("ex/sum: ", x[0][0], x.size())
+        return x
+
+    def __call__(self, target, distribution):
+        #target = torch.tensor([0, 0, 1, 0, 0])
+        #print("loss", -torch.mean(torch.sum(target * torch.log(self.softmax(distribution)), dim=-1)))
+        return -torch.sum(target * torch.log(self.softmax(distribution)))
+
 #########################################################################################################################################
 def train_generator(args, T):
     savedir = "{}/{}/{}/".format(args.logdir, args.dataset, "gen_weights_{}".format(args.model_victim))
@@ -40,7 +61,8 @@ def train_generator(args, T):
     elif args.lossfn == "kldiv":
         lossfn = nn.KLDivLoss(reduction='mean')
     else:
-        lossfn = nn.CrossEntropyLoss(reduction='mean')
+        #lossfn = nn.CrossEntropyLoss(reduction='mean')
+        lossfn = nn.CrossEntropyLoss()
     #lossfn = nn.L1Loss() #use l1 loss between the labels and the logits
 
     budget_per_iter = args.batch_size * ((1 + args.ndirs))
@@ -93,7 +115,7 @@ def train_generator(args, T):
         if args.white_box:
             Tout = T(x)
             if args.lossfn == "crossentropy":
-              lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes).float())
+              lossG = lossfn(Tout/args.temp, F.one_hot(class_label, num_classes=args.n_classes).float())
             else:
               lossG = lossfn(Tout, F.one_hot(class_label, num_classes=args.n_classes))
             (lossG).backward(retain_graph=True)
@@ -102,9 +124,10 @@ def train_generator(args, T):
             Tout = T(x)
             if args.lossfn == "crossentropy":
               lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes).float())
+              if i%10==0:
+                print("Teacher Logits:", torch.max(T(x, print_outputs=True), dim=-1))
             else:
               lossG = zoge_backward_generator_training(args, x_pre, x, T, lossfn, F.one_hot(class_label, num_classes=args.n_classes))
-            
         optG.step()
 
         log.append_tensor(

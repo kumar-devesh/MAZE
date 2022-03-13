@@ -130,7 +130,7 @@ def parse_arguments():
     parser.add_argument('--gen_channel', type=int, default=16, help='num generator channels')
     parser.add_argument('--lossfn', type=str, default="crossentropy", help='loss function to be used in generator pretraining')
     parser.add_argument('--std_wt', type=float, default=10.0, help='std loss for teacher outputs')
-
+    parser.add_argument('--temp', type=float, default=0.1, help='softmax temp for cross entropy loss')
     ################################demo add################################
     # parser.add_argument('--model_gen', type=str, default="simple_gen", help='clone attacker model')
     # parser.add_argument('--latent_dim', type=int, default=40, help='toy model')

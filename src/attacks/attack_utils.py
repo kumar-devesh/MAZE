@@ -271,7 +271,7 @@ def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
 
     with torch.no_grad():
         Tout = T(x)
-        lossG = lossfn(Tout, class_labels) - args.std_wt*torch.std(input=Tout, dim=-1, keepdim=False)
+        lossG = lossfn(Tout/args.temp, class_labels) - args.std_wt*torch.std(input=Tout, dim=-1, keepdim=False)
         L=0
         for _ in range(args.ndirs):
             u = torch.randn(x_pre.shape, device=args.device)
@@ -280,7 +280,7 @@ def zoge_backward_generator_training(args, x_pre, x, T, lossfn, class_labels):
             x_mod_pre = x_pre + (args.mu * u_norm)
             x_mod = tanh(x_mod_pre)
             Tout = T(x_mod)
-            lossG_mod = lossfn(Tout, class_labels) - args.std_wt*torch.std(input=Tout, dim=-1, keepdim=False)
+            lossG_mod = lossfn(Tout/args.temp, class_labels) - args.std_wt*torch.std(input=Tout/args.temp, dim=-1, keepdim=False)
             grad_est += ((d / args.ndirs) * (lossG_mod - lossG) / args.mu).view(
                 [-1, 1, 1, 1, 1]
             ) * u_norm

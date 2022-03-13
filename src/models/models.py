@@ -89,13 +89,38 @@ class ResNet3d_wrapper(nn.Module):
         self.model = torchmodels.video.r3d_18(pretrained=pretrained)
         self.linear = nn.Linear(in_features=400, out_features=n_classes)
         self.n_classes = n_classes
+        self.sm = nn.Softmax(dim=-1)
         
     def forward(self, x):
         # take a transpose for model input
         # x = torch.transpose(x, dim0=1, dim1=2) #input 3,T,H,W
+
+        #if self.n_classes == 400:
+        #    return self.sm(self.model(x))
+        #return self.sm(self.linear(self.model(x)))
+
         if self.n_classes == 400:
             return self.model(x)
         return self.linear(self.model(x))
+
+class MoviNet_wrapper(nn.Module):
+    def __init__(self, pretrained = True, n_classes = 600):
+        super(MoviNet_wrapper, self).__init__()
+        self.pretrained = pretrained
+        self.model = MoViNet(_C.MODEL.MoViNetA2, causal = True, pretrained = pretrained)
+        #self.linear = nn.Linear(in_features=400, out_features=n_classes)
+        self.n_classes = n_classes
+        self.sm = nn.Softmax(dim=-1)
+        
+    def forward(self, x, print_outputs=False):
+        # take a transpose for model input
+        # x = torch.transpose(x, dim0=1, dim1=2) #input 3,T,H,W
+        #if self.n_classes == 600:
+        #    return self.sm(self.model(x))
+        #return self.linear(self.model(x))
+        if print_outputs==True:
+            return self.sm(self.model(x))
+        return self.model(x)
 
 def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained=None, latent_dim=10, **kwargs):
     model_fn = model_dict[modelname]
@@ -114,10 +139,10 @@ def get_model(args, modelname="Generator", n_classes=400, dataset="", pretrained
         model = ResNet3d_wrapper(pretrained=False, n_classes=args.n_classes)
 
     elif modelname == "movinet_T":
-        model = MoViNet(_C.MODEL.MoViNetA2, causal = True, pretrained = True)
+        model = MoviNet_wrapper(pretrained = True)
     
     elif modelname == "movinet_S":
-        model = MoViNet(_C.MODEL.MoViNetA2, causal = True, pretrained = False)
+        model = MoviNet_wrapper(pretrained = False)
 
     elif modelname in [
         "conv3",

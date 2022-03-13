@@ -36,7 +36,7 @@ from attacker import parse_arguments
 from models.models import get_model
 from attacks.attack_utils import generate_images
 
-def test(args, n_samples = 100):
+def test(args, n_samples = 25):
     loaddir = "{}/{}/{}/".format(args.logdir, args.dataset, args.model_victim)
 
     #load final weights
@@ -48,13 +48,18 @@ def test(args, n_samples = 100):
     T = get_model(args, args.model_victim, args.n_classes, args.dataset)  # Target (Teacher)
     T = T.to(args.device)
 
+    S = get_model(args, args.model_clone, args.n_classes, args.dataset)  # Target (Teacher)
+    S = S.to(args.device)
+
     with torch.no_grad():
         gen_samples = []
         for i in range(n_samples//args.batch_size):
             z = torch.randn(args.batch_size, args.in_dim).to(args.device)
             class_label = torch.randint(low=0, high=args.n_classes, size=(args.batch_size,)).to(args.device)
             samples, _ = G(z, class_label)
-            print(torch.argmax(T(samples), dim=-1))
+            #print(torch.argmax(T(samples), dim=-1))
+            print("Teacher Logits:", torch.max(T(samples, print_outputs=True), dim=-1))
+            #print("Student Logits", S(samples))
             gen_samples.append(samples)
             x = generate_images(args, G, z, class_label, "G")
 
